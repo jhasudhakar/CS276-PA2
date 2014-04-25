@@ -1,5 +1,4 @@
 *.zip
-classes/
 out/
 output/
 pa2.pdf
@@ -14,6 +13,8 @@ tmp/
 
 /data/
 cs276-pa2/data
+cs276-pa2/bin
+cs276-pa2/classes
 
 report.aux
 report.log
