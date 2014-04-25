@@ -25,6 +25,42 @@ public class LanguageModel implements Serializable {
 		constructDictionaries(corpusFilePath);
 	}
 
+    /**
+     * Compute unigram probability of w in the training corpus.
+     *
+     * @param w
+     * @return the probability, 0 if the world doesn't exist in corpus
+     */
+    public double unigramProbability(String w) {
+        // TODO
+        return 0.5;
+    }
+
+    /**
+     * Compute bigram probability of w2 given w1 in the training corpus.
+     *
+     * @param w1
+     * @param w2
+     * @return the probability (with possible smoothing applied)
+     */
+    public double bigramProbability(String w1, String w2) {
+        // TODO
+        return 0.5;
+    }
+
+    /**
+     * P(w1, w2, ..., wn) = uP(w1)bP(w2|w1)bP(w3|w2)...bP(wn|wn-1)
+     * All words should exist in the training corpus.
+     *
+     * @param sentence
+     * @return
+     */
+    public double computeProbability(String[] sentence) {
+        double prob = Math.log(unigramProbability(sentence[0]));
+        for (int i = 1; i < sentence.length; ++i)
+            prob += Math.log(bigramProbability(sentence[i-1], sentence[i]));
+        return prob;
+    }
 
 	public void constructDictionaries(String corpusFilePath)
 			throws Exception {
