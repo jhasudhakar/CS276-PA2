@@ -9,7 +9,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class LanguageModel implements Vocabulary, Serializable {
     // the singleton instance
@@ -33,9 +35,19 @@ public class LanguageModel implements Vocabulary, Serializable {
 
     @Override
     public boolean exists(String word) {
-        Integer count = unigramCounts.get(word);
-        // if the word exists in vocabulary, it must have a non-zero count
-        return count != null;
+        // if the word exists in vocabulary, it must be a key
+        return unigramCounts.containsKey(word);
+    }
+
+    @Override
+    public Set<String> known(Set<String> candidates) {
+        Set<String> results = new HashSet<String>();
+        for (String s : candidates) {
+            if (this.exists(s)) {
+                results.add(s);
+            }
+        }
+        return results;
     }
 
     /**
