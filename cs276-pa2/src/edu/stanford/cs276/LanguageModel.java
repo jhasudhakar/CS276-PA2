@@ -11,8 +11,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-
-public class LanguageModel implements Serializable {
+public class LanguageModel implements Vocabulary, Serializable {
     // the singleton instance
     private static LanguageModel lm_;
     // for bigram probability interpolation
@@ -30,6 +29,13 @@ public class LanguageModel implements Serializable {
     // Do not call constructor directly since this is a Singleton
     private LanguageModel(String corpusFilePath) throws Exception {
         constructDictionaries(corpusFilePath);
+    }
+
+    @Override
+    public boolean exists(String word) {
+        Integer count = unigramCounts.get(word);
+        // if the word exists in vocabulary, it must have a non-zero count
+        return count != null;
     }
 
     /**
