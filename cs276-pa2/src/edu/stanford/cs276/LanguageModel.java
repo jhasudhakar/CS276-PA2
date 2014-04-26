@@ -8,18 +8,21 @@ import java.io.FileReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class LanguageModel implements Serializable {
 
+    private static final Integer ZERO = 0;
 	private static LanguageModel lm_;
-	/* Feel free to add more members here.
-	 * You need to implement more methods here as needed.
-	 * 
-	 * Your code here ...
-	 */
-	
-	
+    // the number of terms in the training corpus
+    private double totalTokens;
+    // w -> probability
+    private Map<String, Integer> unigramCounts;
+    // <w1, w2> -> probability
+    private Map<String, Map<String, Integer>> bigramCounts;
+
 	// Do not call constructor directly since this is a Singleton
 	private LanguageModel(String corpusFilePath) throws Exception {
 		constructDictionaries(corpusFilePath);
@@ -32,8 +35,7 @@ public class LanguageModel implements Serializable {
      * @return the probability, 0 if the world doesn't exist in corpus
      */
     public double unigramProbability(String w) {
-        // TODO
-        return 0.5;
+        return unigramCounts.get(w) / totalTokens;
     }
 
     /**
@@ -44,8 +46,9 @@ public class LanguageModel implements Serializable {
      * @return the probability (with possible smoothing applied)
      */
     public double bigramProbability(String w1, String w2) {
-        // TODO
-        return 0.5;
+        double w1TotalCount = unigramCounts.get(w1);
+        int w2Count = bigramCounts.get(w1).get(w2);
+        return w2Count / w1TotalCount;
     }
 
     /**
@@ -64,27 +67,72 @@ public class LanguageModel implements Serializable {
 
 	public void constructDictionaries(String corpusFilePath)
 			throws Exception {
+        unigramCounts = new HashMap<String, Integer>();
+        bigramCounts = new HashMap<String, Map<String, Integer>>();
 
 		System.out.println("Constructing dictionaries...");
 		File dir = new File(corpusFilePath);
 		for (File file : dir.listFiles()) {
-			if (".".equals(file.getName()) || "..".equals(file.getName())) {
+            // ignore hidden files
+            if (file.getName().charAt(0) == '.') {
 				continue; // Ignore the self and parent aliases.
 			}
+
 			System.out.printf("Reading data file %s ...\n", file.getName());
 			BufferedReader input = new BufferedReader(new FileReader(file));
 			String line = null;
 			while ((line = input.readLine()) != null) {
-				/*
-				 * Your code here
-				 */
-			}
+                String[] tokens = line.trim().split("\\s+");
+                if (tokens.length == 0) {
+                    continue;
+                }
+
+                // process first token: only need to update unigramCounts
+                incrementCount(tokens[0], unigramCounts);
+
+                // process the rest tokens
+                for (int i = 1; i < tokens.length; ++i) {
+                    // increment unigram count
+                    incrementCount(tokens[i], unigramCounts);
+
+                    // increment bigram count
+                    Map<String, Integer> counts = bigramCounts.get(tokens[i-1]);
+                    if (counts == null) {
+                        counts = new HashMap<String, Integer>();
+                        bigramCounts.put(tokens[i-1], counts);
+                    }
+                    incrementCount(tokens[i], counts);
+                }
+            }
 			input.close();
-		}
+        }
+
+        // cache total number of terms
+        totalTokens = sum(unigramCounts);
+
+        // Note: no need to pre-compute all unigram and bigram probabilities
+        //       as we will only use a fraction of them
+
 		System.out.println("Done.");
 	}
-	
-	// Loads the object (and all associated data) from disk
+
+    private static int sum(Map<String, Integer> unigramCounts) {
+        int sum = 0;
+
+        for (int i : unigramCounts.values()) {
+            sum += i;
+        }
+
+        return sum;
+    }
+
+    private <T> void incrementCount(T token, Map<T, Integer> counts) {
+        Integer count = counts.get(token);
+        int val = count == null ? ZERO : count;
+        counts.put(token, val+1);
+    }
+
+    // Loads the object (and all associated data) from disk
 	public static LanguageModel load() throws Exception {
 		try {
 			if (lm_==null){

@@ -15,6 +15,8 @@ tmp/
 cs276-pa2/data
 cs276-pa2/bin
 cs276-pa2/classes
+cs276-pa2/languageModel
+cs276-pa2/noisyChannel
 
 report.aux
 report.log
