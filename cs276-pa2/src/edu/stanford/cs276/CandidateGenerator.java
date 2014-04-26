@@ -31,12 +31,26 @@ public class CandidateGenerator implements Serializable {
                     ' ',','};
 
     // Generate all candidates for the target query
-    public Set<String> getCandidates(String query) throws Exception {
+    public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
         Set<String> candidates = new HashSet<String>();
-        /*
-         * Test edit distance 1 first
-         */
-        candidates.addAll(edits1(query));
+        // If query is a valid word in the dictionary, simply returns.
+        if (vocabulary.exists(query)) {
+            candidates.add(query);
+            return candidates;
+        }
+        // If there are candidates in edits1(query), return.
+        Set<String> edit1Candidates = vocabulary.known(edits1(query));
+        if (!edit1Candidates.isEmpty()) {
+            return edit1Candidates;
+        }
+        // If there are candidates in edits2(query), return.
+        Set<String> edit2Candidates = vocabulary.known(edits2(query));
+        System.out.println(edit2Candidates.size());
+        if (!edit2Candidates.isEmpty()) {
+            return edit2Candidates;
+        }
+        // If there are no candidates found, simply return.
+        candidates.add(query);
         return candidates;
     }
 
@@ -99,16 +113,42 @@ public class CandidateGenerator implements Serializable {
         return results;
     }
 
-    public static void main(String[] args) {
-        try {
-            CandidateGenerator cg = CandidateGenerator.get();
-            Set<String> candidates = cg.getCandidates("abcd");
-            for (String cand : candidates) {
-                System.out.println(cand);
-            }
-            System.out.println(candidates.size());
-        } catch (Exception e) {
-            e.printStackTrace();
+    /**
+     * Return all candidates whose edit distance are 2.
+     * @param word
+     * @return
+     */
+    private static Set<String> edits2(String word) {
+        Set<String> candidates = edits1(word);
+        Set<String> results = new HashSet<String>();
+        for (String s : candidates) {
+            results.addAll(edits1(s));
         }
+        return results;
+    }
+
+    public static void main(String args[]) throws Exception {
+        System.out.println("Test begins.");
+        LanguageModel languageModel;
+        languageModel = LanguageModel.load();
+        System.out.println("Load finished.");
+        CandidateGenerator cg = CandidateGenerator.get();
+        Set<String> candidates = cg.getCandidates("spellig", languageModel);
+        for (String s : candidates) {
+            System.out.println(s);
+        }
+        System.out.println(candidates.size());
+
+        candidates = cg.getCandidates("somhing", languageModel);
+        for (String s : candidates) {
+            System.out.println(s);
+        }
+        System.out.println(candidates.size());
+
+        candidates = cg.getCandidates("acres", languageModel);
+        for (String s : candidates) {
+            System.out.println(s);
+        }
+        System.out.println(candidates.size());
     }
 }
