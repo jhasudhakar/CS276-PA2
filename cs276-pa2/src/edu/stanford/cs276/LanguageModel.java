@@ -15,7 +15,7 @@ import java.util.Map;
 public class LanguageModel implements Serializable {
 
     private static final Integer ZERO = 0;
-	private static LanguageModel lm_;
+    private static LanguageModel lm_;
     // the number of terms in the training corpus
     private double totalTokens;
     // w -> probability
@@ -23,10 +23,10 @@ public class LanguageModel implements Serializable {
     // <w1, w2> -> probability
     private Map<String, Map<String, Integer>> bigramCounts;
 
-	// Do not call constructor directly since this is a Singleton
-	private LanguageModel(String corpusFilePath) throws Exception {
-		constructDictionaries(corpusFilePath);
-	}
+    // Do not call constructor directly since this is a Singleton
+    private LanguageModel(String corpusFilePath) throws Exception {
+        constructDictionaries(corpusFilePath);
+    }
 
     /**
      * Compute unigram probability of w in the training corpus.
@@ -65,23 +65,23 @@ public class LanguageModel implements Serializable {
         return prob;
     }
 
-	public void constructDictionaries(String corpusFilePath)
-			throws Exception {
+    public void constructDictionaries(String corpusFilePath)
+            throws Exception {
         unigramCounts = new HashMap<String, Integer>();
         bigramCounts = new HashMap<String, Map<String, Integer>>();
 
-		System.out.println("Constructing dictionaries...");
-		File dir = new File(corpusFilePath);
-		for (File file : dir.listFiles()) {
+        System.out.println("Constructing dictionaries...");
+        File dir = new File(corpusFilePath);
+        for (File file : dir.listFiles()) {
             // ignore hidden files
             if (file.getName().charAt(0) == '.') {
-				continue; // Ignore the self and parent aliases.
-			}
+                continue; // Ignore the self and parent aliases.
+            }
 
-			System.out.printf("Reading data file %s ...\n", file.getName());
-			BufferedReader input = new BufferedReader(new FileReader(file));
-			String line = null;
-			while ((line = input.readLine()) != null) {
+            System.out.printf("Reading data file %s ...\n", file.getName());
+            BufferedReader input = new BufferedReader(new FileReader(file));
+            String line = null;
+            while ((line = input.readLine()) != null) {
                 String[] tokens = line.trim().split("\\s+");
                 if (tokens.length == 0) {
                     continue;
@@ -104,7 +104,7 @@ public class LanguageModel implements Serializable {
                     incrementCount(tokens[i], counts);
                 }
             }
-			input.close();
+            input.close();
         }
 
         // cache total number of terms
@@ -113,8 +113,8 @@ public class LanguageModel implements Serializable {
         // Note: no need to pre-compute all unigram and bigram probabilities
         //       as we will only use a fraction of them
 
-		System.out.println("Done.");
-	}
+        System.out.println("Done.");
+    }
 
     private static int sum(Map<String, Integer> unigramCounts) {
         int sum = 0;
@@ -133,32 +133,32 @@ public class LanguageModel implements Serializable {
     }
 
     // Loads the object (and all associated data) from disk
-	public static LanguageModel load() throws Exception {
-		try {
-			if (lm_==null){
-				FileInputStream fiA = new FileInputStream(Config.languageModelFile);
-				ObjectInputStream oisA = new ObjectInputStream(fiA);
-				lm_ = (LanguageModel) oisA.readObject();
-			}
-		} catch (Exception e){
-			throw new Exception("Unable to load language model.  You may have not run build corrector");
-		}
-		return lm_;
-	}
-	
-	// Saves the object (and all associated data) to disk
-	public void save() throws Exception{
-		FileOutputStream saveFile = new FileOutputStream(Config.languageModelFile);
-		ObjectOutputStream save = new ObjectOutputStream(saveFile);
-		save.writeObject(this);
-		save.close();
-	}
-	
-	// Creates a new lm object from a corpus
-	public static LanguageModel create(String corpusFilePath) throws Exception {
-		if(lm_ == null ){
-			lm_ = new LanguageModel(corpusFilePath);
-		}
-		return lm_;
-	}
+    public static LanguageModel load() throws Exception {
+        try {
+            if (lm_==null){
+                FileInputStream fiA = new FileInputStream(Config.languageModelFile);
+                ObjectInputStream oisA = new ObjectInputStream(fiA);
+                lm_ = (LanguageModel) oisA.readObject();
+            }
+        } catch (Exception e){
+            throw new Exception("Unable to load language model.  You may have not run build corrector");
+        }
+        return lm_;
+    }
+
+    // Saves the object (and all associated data) to disk
+    public void save() throws Exception{
+        FileOutputStream saveFile = new FileOutputStream(Config.languageModelFile);
+        ObjectOutputStream save = new ObjectOutputStream(saveFile);
+        save.writeObject(this);
+        save.close();
+    }
+
+    // Creates a new lm object from a corpus
+    public static LanguageModel create(String corpusFilePath) throws Exception {
+        if(lm_ == null ){
+            lm_ = new LanguageModel(corpusFilePath);
+        }
+        return lm_;
+    }
 }
