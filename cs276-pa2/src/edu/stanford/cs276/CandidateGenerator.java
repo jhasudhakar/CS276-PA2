@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.sun.javafx.geom.AreaOp;
 import edu.stanford.cs276.util.Pair;
 
 public class CandidateGenerator implements Serializable {
