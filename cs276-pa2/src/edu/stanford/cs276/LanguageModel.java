@@ -13,9 +13,13 @@ import java.util.Map;
 
 
 public class LanguageModel implements Serializable {
-
-    private static final Integer ZERO = 0;
+    // the singleton instance
     private static LanguageModel lm_;
+    // for bigram probability interpolation
+    private static double LAMBDA = 0.1;
+    // for convenience (see constructDictionaries)
+    private static final Integer ZERO = 0;
+
     // the number of terms in the training corpus
     private double totalTokens;
     // w -> probability
@@ -46,9 +50,13 @@ public class LanguageModel implements Serializable {
      * @return the probability (with possible smoothing applied)
      */
     public double bigramProbability(String w1, String w2) {
+        double w2UnigramProb = unigramProbability(w2);
+
         double w1TotalCount = unigramCounts.get(w1);
         int w2Count = bigramCounts.get(w1).get(w2);
-        return w2Count / w1TotalCount;
+        double w2BigramProb = w2Count / w1TotalCount;
+
+        return LAMBDA * w2UnigramProb + (1 - LAMBDA) * w2BigramProb;
     }
 
     /**
