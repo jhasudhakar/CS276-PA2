@@ -1,5 +1,7 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.util.CounterUtility;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,8 +20,6 @@ public class LanguageModel implements Vocabulary, Serializable {
     private static LanguageModel lm_;
     // for bigram probability interpolation
     private static double LAMBDA = 0.1;
-    // for convenience (see constructDictionaries)
-    private static final Integer ZERO = 0;
 
     // the number of terms in the training corpus
     private double totalTokens;
@@ -114,12 +114,12 @@ public class LanguageModel implements Vocabulary, Serializable {
                 }
 
                 // process first token: only need to update unigramCounts
-                incrementCount(tokens[0], unigramCounts);
+                CounterUtility.incrementCount(tokens[0], unigramCounts);
 
                 // process the rest tokens
                 for (int i = 1; i < tokens.length; ++i) {
                     // increment unigram count
-                    incrementCount(tokens[i], unigramCounts);
+                    CounterUtility.incrementCount(tokens[i], unigramCounts);
 
                     // increment bigram count
                     Map<String, Integer> counts = bigramCounts.get(tokens[i-1]);
@@ -127,7 +127,7 @@ public class LanguageModel implements Vocabulary, Serializable {
                         counts = new HashMap<String, Integer>();
                         bigramCounts.put(tokens[i-1], counts);
                     }
-                    incrementCount(tokens[i], counts);
+                    CounterUtility.incrementCount(tokens[i], counts);
                 }
             }
             input.close();
@@ -150,12 +150,6 @@ public class LanguageModel implements Vocabulary, Serializable {
         }
 
         return sum;
-    }
-
-    private <T> void incrementCount(T token, Map<T, Integer> counts) {
-        Integer count = counts.get(token);
-        int val = count == null ? ZERO : count;
-        counts.put(token, val+1);
     }
 
     // Loads the object (and all associated data) from disk
