@@ -281,7 +281,7 @@ public class EmpiricalCostModel implements EditCostModel{
 
         if (Q.equals(R)) {
             // no edit between them
-            return 0.9;
+            return Math.log(0.9);
         }
 
         Edit edit = determineEdit(Q, R);
@@ -310,7 +310,7 @@ public class EmpiricalCostModel implements EditCostModel{
             total = bigramCounts.get(bigram.toString());
         }
 
-        return smooth(count, total);
+        return Math.log(smooth(count, total));
     }
 
     // apply Laplace smoothing
