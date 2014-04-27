@@ -1,5 +1,6 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.util.CounterUtility;
 import edu.stanford.cs276.util.Pair;
 
 import java.io.BufferedReader;
@@ -21,19 +22,23 @@ public class EmpiricalCostModel implements EditCostModel{
     // will be mapped to this character
     private char unknownCharacter;
 
+    // counts of $c_i$ and ${c_i}{c_i+1}$ in correct queries
+    // here unigram and bigram are in terms of characters
+    private Map<Character, Integer> unigramCounts;
+    private Map<String, Integer> bigramCounts;
+
     // counts of different edits
     private Map<Pair<Character, Character>, Integer> insertionCounts;
     private Map<Pair<Character, Character>, Integer> deletionCounts;
     private Map<Pair<Character, Character>, Integer> substitutionCounts;
     private Map<Pair<Character, Character>, Integer> transpositionCounts;
 
-    // for convenience (see incrementCount)
-    private static final Integer ZERO = 0;
-
     public EmpiricalCostModel(String editsFile) throws IOException {
         loadAlphabet();
 
         // initialize counts
+        unigramCounts = new HashMap<Character, Integer>();
+        bigramCounts = new HashMap<String, Integer>();
         insertionCounts = new HashMap<Pair<Character, Character>, Integer>();
         deletionCounts = new HashMap<Pair<Character, Character>, Integer>();
         substitutionCounts = new HashMap<Pair<Character, Character>, Integer>();
@@ -49,6 +54,8 @@ public class EmpiricalCostModel implements EditCostModel{
             String noisy = parts[0];
             String clean = parts[1];
 
+            updateCharacterCounts(clean);
+
             // determine edit type
             Edit ed = determineEdit(clean, noisy);
 
@@ -58,18 +65,38 @@ public class EmpiricalCostModel implements EditCostModel{
             }
 
             if (ed.type == EditType.DELETION) {
-                incrementCount(ed.x, ed.y, deletionCounts);
+                incrementEditCount(ed.x, ed.y, deletionCounts);
             } else if (ed.type == EditType.INSERTION) {
-                incrementCount(ed.x, ed.y, insertionCounts);
+                incrementEditCount(ed.x, ed.y, insertionCounts);
             } else if (ed.type == EditType.SUBSTITUTION) {
-                incrementCount(ed.x, ed.y, substitutionCounts);
+                incrementEditCount(ed.x, ed.y, substitutionCounts);
             } else if (ed.type == EditType.TRANSPOSITION) {
-                incrementCount(ed.x, ed.y, transpositionCounts);
+                incrementEditCount(ed.x, ed.y, transpositionCounts);
             }
         }
 
         input.close();
         System.out.println("Done.");
+    }
+
+    private void updateCharacterCounts(final String word) {
+        // use StringBuilder for better performance
+        StringBuilder bigram = new StringBuilder(2);
+
+        // handle beginning character
+        CounterUtility.incrementCount(BEGIN_CHAR, unigramCounts);
+
+        char prevChar = BEGIN_CHAR;
+        for (int i = 0; i < word.length(); ++i) {
+            char currChar = characterClass(word.charAt(i));
+            CounterUtility.incrementCount(currChar, unigramCounts);
+
+            bigram.setCharAt(0, prevChar);
+            bigram.setCharAt(1, currChar);
+            CounterUtility.incrementCount(bigram.toString(), bigramCounts);
+
+            prevChar = currChar;
+        }
     }
 
     /**
@@ -188,16 +215,14 @@ public class EmpiricalCostModel implements EditCostModel{
         return null;
     }
 
-    private void incrementCount(char x, char y, Map<Pair<Character, Character>, Integer> counts) {
+    private void incrementEditCount(char x, char y, Map<Pair<Character, Character>, Integer> counts) {
         // transform x, y to proper class
         char xClass = characterClass(x);
         char yClass = characterClass(y);
 
         // increment corresponding count
         Pair<Character, Character> p = new Pair<Character, Character>(xClass, yClass);
-        Integer currentCount = counts.get(p);
-        currentCount = currentCount == null ? ZERO : currentCount;
-        counts.put(p, currentCount + 1);
+        CounterUtility.incrementCount(p, counts);
     }
 
     private void loadAlphabet() {
@@ -249,7 +274,47 @@ public class EmpiricalCostModel implements EditCostModel{
 
     @Override
     public double editProbability(String Q, String R, int distance) {
-        return 0.5;
+        if (distance > 1) {
+            throw new RuntimeException("Not supported distance > 1 (passed in value = " + distance + ")");
+        }
+
+        if (Q.equals(R)) {
+            // no edit between them
+            return 0.9;
+        }
+
+        Edit edit = determineEdit(Q, R);
+        char x = characterClass(edit.x);
+        char y = characterClass(edit.y);
+        Pair<Character, Character> p = new Pair<Character, Character>(x, y);
+
+        StringBuilder bigram = new StringBuilder(2);
+        bigram.setCharAt(0, x);
+        bigram.setCharAt(1, y);
+
+        double count = 1;
+        double total = 2;
+
+        if (edit.type == EditType.DELETION) {
+            count = deletionCounts.get(p);
+            total = bigramCounts.get(bigram.toString());
+        } else if (edit.type == EditType.INSERTION) {
+            count = insertionCounts.get(p);
+            total = unigramCounts.get(x);
+        } else if (edit.type == EditType.SUBSTITUTION) {
+            count = substitutionCounts.get(p);
+            total = unigramCounts.get(x);
+        } else if (edit.type == EditType.TRANSPOSITION) {
+            count = transpositionCounts.get(p);
+            total = bigramCounts.get(bigram.toString());
+        }
+
+        return smooth(count, total);
+    }
+
+    // apply Laplace smoothing
+    private double smooth(double count, double total) {
+        return (count + 1) / (total + alphabet.size());
     }
 
     public static void main(String[] args) throws IOException {
@@ -257,7 +322,7 @@ public class EmpiricalCostModel implements EditCostModel{
         EmpiricalCostModel model = new EmpiricalCostModel(args[0]);
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("RUNNING TIME: "+totalTime+" ms. ");
+        System.out.println("RUNNING TIME: " + totalTime + " ms. ");
     }
 
     /*
