@@ -34,7 +34,7 @@ public class CandidateGenerator implements Serializable {
         String[] tokens = query.split("\\s+");
 
         // Single word
-        System.out.println("Single word.");
+        // System.out.println("Single word.");
         for (int i = 0; i < tokens.length; i++) {
             // Generate candidates
             Set<String> candidates = getCandidatesForToken(tokens[i], vocabulary);
@@ -53,7 +53,7 @@ public class CandidateGenerator implements Serializable {
         }
 
         // Combine two words at first
-        System.out.println("Combine two words at first.");
+        // System.out.println("Combine two words at first.");
         for (int i = 0; i < tokens.length - 1; i++) {
             String token = tokens[i] + tokens[i + 1];
             Set<String> candidates = getCandidatesForToken(token, vocabulary);
@@ -71,7 +71,7 @@ public class CandidateGenerator implements Serializable {
             }
         }
 
-        System.out.println("Number of candidates:" + results.size());
+        // System.out.println("Number of candidates:" + results.size());
         return results;
     }
 
