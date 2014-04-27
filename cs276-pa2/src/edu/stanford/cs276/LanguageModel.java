@@ -77,7 +77,10 @@ public class LanguageModel implements Vocabulary, Serializable {
         double w2UnigramProb = unigramProbability(w2);
 
         double w1TotalCount = unigramCounts.get(w1);
-        int w2Count = bigramCounts.get(w1).get(w2);
+        int w2Count = 0;
+        if (bigramCounts.get(w1).containsKey(w2)) {
+            w2Count = bigramCounts.get(w1).get(w2);
+        }
         double w2BigramProb = w2Count / w1TotalCount;
 
         return LAMBDA * w2UnigramProb + (1 - LAMBDA) * w2BigramProb;
