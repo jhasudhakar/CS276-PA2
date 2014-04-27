@@ -81,7 +81,8 @@ public class EmpiricalCostModel implements EditCostModel{
 
     private void updateCharacterCounts(final String word) {
         // use StringBuilder for better performance
-        StringBuilder bigram = new StringBuilder(2);
+        // @@ is for providing the initial 2 character space
+        StringBuilder bigram = new StringBuilder("@@");
 
         // handle beginning character
         CounterUtility.incrementCount(BEGIN_CHAR, unigramCounts);
@@ -288,7 +289,7 @@ public class EmpiricalCostModel implements EditCostModel{
         char y = characterClass(edit.y);
         Pair<Character, Character> p = new Pair<Character, Character>(x, y);
 
-        StringBuilder bigram = new StringBuilder(2);
+        StringBuilder bigram = new StringBuilder("@@");
         bigram.setCharAt(0, x);
         bigram.setCharAt(1, y);
 
