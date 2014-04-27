@@ -36,7 +36,13 @@ public class LanguageModel implements Vocabulary, Serializable {
     @Override
     public boolean exists(String word) {
         // if the word exists in vocabulary, it must be a key
-        return unigramCounts.containsKey(word);
+        String[] tokens = word.split("\\s+");
+        for (String token : tokens) {
+            if (!unigramCounts.containsKey(token)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
