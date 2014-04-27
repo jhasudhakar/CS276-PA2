@@ -27,7 +27,7 @@ public class CandidateGenerator implements Serializable {
                     'a','b','c','d','e','f','g','h','i','j','k','l','m','n',
                     'o','p','q','r','s','t','u','v','w','x','y','z',
                     '0','1','2','3','4','5','6','7','8','9',
-                    ' ',',','-'};
+                    ' ',',','-','\''};
 
     // Generate all candidates for the target query
     public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
@@ -38,7 +38,7 @@ public class CandidateGenerator implements Serializable {
         // System.out.println("Single word.");
         for (int i = 0; i < tokens.length; i++) {
             // Generate candidates
-            Set<String> candidates = getCandidatesForToken(tokens[i], vocabulary);
+            Set<String> candidates = getCandidatesForToken(tokens[i], vocabulary, 2);
             // For each candidate, add token[0:i] + candidate + token[i+1:] to results
             StringBuilder s1 = new StringBuilder();
             for (int j = 0; j < i; j++) {
@@ -48,11 +48,12 @@ public class CandidateGenerator implements Serializable {
             for (int j = i + 1; j < tokens.length; j++) {
                 s2.append(" " + tokens[j]);
             }
+            // If token[0:i] and token[i+1:] are not valid, continue
+            if (!vocabulary.exists(s1.toString() + s2.toString())) {
+                continue;
+            }
             for (String c : candidates) {
-                String s = s1.toString() + c + s2.toString();
-                if (vocabulary.exists(s)) {
-                    results.add(s);
-                }
+                results.add(s1.toString() + c.trim() + s2.toString());
             }
         }
 
@@ -60,7 +61,7 @@ public class CandidateGenerator implements Serializable {
         // System.out.println("Combine two words at first.");
         for (int i = 0; i < tokens.length - 1; i++) {
             String token = tokens[i] + tokens[i + 1];
-            Set<String> candidates = getCandidatesForToken(token, vocabulary);
+            Set<String> candidates = getCandidatesForToken(token, vocabulary, 1);
             // For each candidate, add token[0:i] + candidate + token[i+2:] to results
             StringBuilder s1 = new StringBuilder();
             for  (int j = 0; j < i; j++) {
@@ -70,11 +71,12 @@ public class CandidateGenerator implements Serializable {
             for (int j = i + 2; j < tokens.length; j++) {
                 s2.append(" " + tokens[j]);
             }
+            // If token[0:i] and token[i+1:] are not valid, continue
+            if (!vocabulary.exists(s1.toString() + s2.toString())) {
+                continue;
+            }
             for (String c : candidates) {
-                String s = s1.toString() + c + s2.toString();
-                if (vocabulary.exists(s)) {
-                    results.add(s);
-                }
+                results.add(s1.toString() + c.trim() + s2.toString());
             }
         }
 
@@ -88,7 +90,7 @@ public class CandidateGenerator implements Serializable {
      * @param vocabulary
      * @return
      */
-    private static Set<String> getCandidatesForToken(String token, Vocabulary vocabulary) {
+    private static Set<String> getCandidatesForToken(String token, Vocabulary vocabulary, int distance) {
         Set<String> candidates = new HashSet<String>();
         // If the vocabulary exists in the dictionary, add it to our candidates set.
         if (vocabulary.exists(token)) {
@@ -97,7 +99,9 @@ public class CandidateGenerator implements Serializable {
         // Add tokens that are within edit distance 1.
         candidates.addAll(vocabulary.known(edits1(token)));
         // Add tokens that are within edit distance 2.
-        candidates.addAll(vocabulary.known(edits2(token)));
+        if (candidates.isEmpty() || distance == 2) {
+            candidates.addAll(vocabulary.known(edits2(token)));
+        }
         // If there are no candidates found, simply return.
         if (candidates.isEmpty()) {
             System.out.println("No candidate found.");
