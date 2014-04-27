@@ -2,7 +2,6 @@ package edu.stanford.cs276;
 
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import edu.stanford.cs276.util.Pair;
