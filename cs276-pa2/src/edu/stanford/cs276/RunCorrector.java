@@ -112,15 +112,21 @@ public class RunCorrector {
             if (goldFileReader != null) {
                 String goldQuery = goldFileReader.readLine();
                 if (goldQuery.equals(correctedQuery)) {
+                    System.out.format("%d √: %s\n", totalCount, correctedQuery);
                     yourCorrectCount++;
+                } else {
+                    System.out.format("%d x: %s -> %s\n", totalCount, correctedQuery, goldQuery);
                 }
                 totalCount++;
+            } else {
+                System.out.format("%d: %s\n", totalCount, correctedQuery);
             }
-            System.out.println(correctedQuery);
         }
         queriesFileReader.close();
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
+        System.out.println(yourCorrectCount);
+        System.out.println(1.0 * yourCorrectCount / totalCount);
         System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 }
