@@ -98,6 +98,9 @@ public class CandidateGenerator implements Serializable {
         }
         // Add tokens that are within edit distance 1.
         candidates.addAll(vocabulary.known(edits1(token)));
+        if (!candidates.isEmpty()) {
+            return candidates;
+        }
         // Add tokens that are within edit distance 2.
         if (candidates.isEmpty() || distance == 2) {
             candidates.addAll(vocabulary.known(edits2(token)));
