@@ -23,6 +23,8 @@ public class LanguageModel implements Vocabulary, Serializable {
 
     // the number of terms in the training corpus
     private double totalTokens;
+    // total number of terms
+    private double totalTerms;
     // w -> probability
     private Map<String, Integer> unigramCounts;
     // <w1, w2> -> probability
@@ -37,6 +39,9 @@ public class LanguageModel implements Vocabulary, Serializable {
     public boolean exists(String word) {
         // if the word exists in vocabulary, it must be a key
         String[] tokens = word.split("\\s+");
+        if (tokens.length == 0) {
+            return false;
+        }
         for (String token : tokens) {
             if (!unigramCounts.containsKey(token)) {
                 return false;
@@ -63,7 +68,11 @@ public class LanguageModel implements Vocabulary, Serializable {
      * @return the probability, 0 if the world doesn't exist in corpus
      */
     public double unigramProbability(String w) {
-        return unigramCounts.get(w) / totalTokens;
+        int count = 0;
+        if (unigramCounts.containsKey(w)) {
+            count = unigramCounts.get(w);
+        }
+        return (count + 1) / (totalTokens + totalTerms); // Apply add-one smoothing
     }
 
     /**
@@ -76,9 +85,12 @@ public class LanguageModel implements Vocabulary, Serializable {
     public double bigramProbability(String w1, String w2) {
         double w2UnigramProb = unigramProbability(w2);
 
-        double w1TotalCount = unigramCounts.get(w1);
+        double w1TotalCount = 1;
+        if (unigramCounts.containsKey(w1)) {
+            w1TotalCount += unigramCounts.get(w1);
+        }
         int w2Count = 0;
-        if (bigramCounts.get(w1).containsKey(w2)) {
+        if (bigramCounts.containsKey(w1) && bigramCounts.get(w1).containsKey(w2)) {
             w2Count = bigramCounts.get(w1).get(w2);
         }
         double w2BigramProb = w2Count / w1TotalCount;
@@ -145,6 +157,7 @@ public class LanguageModel implements Vocabulary, Serializable {
 
         // cache total number of terms
         totalTokens = sum(unigramCounts);
+        totalTerms = unigramCounts.keySet().size() + 1; // Account for unknown token
 
         // Note: no need to pre-compute all unigram and bigram probabilities
         //       as we will only use a fraction of them
