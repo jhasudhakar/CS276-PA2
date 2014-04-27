@@ -3,6 +3,7 @@ package edu.stanford.cs276;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import edu.stanford.cs276.util.Pair;
 
@@ -30,25 +31,78 @@ public class CandidateGenerator implements Serializable {
 
     // Generate all candidates for the target query
     public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
+        Set<String> results = new HashSet<String>();
+        String[] tokens = query.split("\\s+");
+
+        // Single word
+        // System.out.println("Single word.");
+        for (int i = 0; i < tokens.length; i++) {
+            // Generate candidates
+            Set<String> candidates = getCandidatesForToken(tokens[i], vocabulary);
+            // For each candidate, add token[0:i] + candidate + token[i+1:] to results
+            StringBuilder s1 = new StringBuilder();
+            for (int j = 0; j < i; j++) {
+                s1.append(tokens[j] + " ");
+            }
+            StringBuilder s2 = new StringBuilder();
+            for (int j = i + 1; j < tokens.length; j++) {
+                s2.append(" " + tokens[j]);
+            }
+            for (String c : candidates) {
+                String s = s1.toString() + c + s2.toString();
+                if (vocabulary.exists(s)) {
+                    results.add(s);
+                }
+            }
+        }
+
+        // Combine two words at first
+        // System.out.println("Combine two words at first.");
+        for (int i = 0; i < tokens.length - 1; i++) {
+            String token = tokens[i] + tokens[i + 1];
+            Set<String> candidates = getCandidatesForToken(token, vocabulary);
+            // For each candidate, add token[0:i] + candidate + token[i+2:] to results
+            StringBuilder s1 = new StringBuilder();
+            for  (int j = 0; j < i; j++) {
+                s1.append(tokens[j] + " ");
+            }
+            StringBuilder s2 = new StringBuilder();
+            for (int j = i + 2; j < tokens.length; j++) {
+                s2.append(" " + tokens[j]);
+            }
+            for (String c : candidates) {
+                String s = s1.toString() + c + s2.toString();
+                if (vocabulary.exists(s)) {
+                    results.add(s);
+                }
+            }
+        }
+
+        // System.out.println("Number of candidates:" + results.size());
+        return results;
+    }
+
+    /**
+     * Get candidates for a single word.
+     * @param token
+     * @param vocabulary
+     * @return
+     */
+    private static Set<String> getCandidatesForToken(String token, Vocabulary vocabulary) {
         Set<String> candidates = new HashSet<String>();
-        // If query is a valid word in the dictionary, simply returns.
-        if (vocabulary.exists(query)) {
-            candidates.add(query);
-            return candidates;
+        // If the vocabulary exists in the dictionary, add it to our candidates set.
+        if (vocabulary.exists(token)) {
+            candidates.add(token);
         }
-        // If there are candidates in edits1(query), return.
-        Set<String> edit1Candidates = vocabulary.known(edits1(query));
-        if (!edit1Candidates.isEmpty()) {
-            return edit1Candidates;
-        }
-        // If there are candidates in edits2(query), return.
-        Set<String> edit2Candidates = vocabulary.known(edits2(query));
-        System.out.println(edit2Candidates.size());
-        if (!edit2Candidates.isEmpty()) {
-            return edit2Candidates;
-        }
+        // Add tokens that are within edit distance 1.
+        candidates.addAll(vocabulary.known(edits1(token)));
+        // Add tokens that are within edit distance 2.
+        candidates.addAll(vocabulary.known(edits2(token)));
         // If there are no candidates found, simply return.
-        candidates.add(query);
+        if (candidates.isEmpty()) {
+            System.out.println("No candidate found.");
+            candidates.add(token);
+        }
         return candidates;
     }
 
@@ -131,19 +185,19 @@ public class CandidateGenerator implements Serializable {
         languageModel = LanguageModel.load();
         System.out.println("Load finished.");
         CandidateGenerator cg = CandidateGenerator.get();
-        Set<String> candidates = cg.getCandidates("spellig", languageModel);
+        Set<String> candidates = cg.getCandidates("i wantto learndatabase", languageModel);
         for (String s : candidates) {
             System.out.println(s);
         }
         System.out.println(candidates.size());
 
-        candidates = cg.getCandidates("somhing", languageModel);
+        candidates = cg.getCandidates("i want to eat some ing", languageModel);
         for (String s : candidates) {
             System.out.println(s);
         }
         System.out.println(candidates.size());
 
-        candidates = cg.getCandidates("acres", languageModel);
+        candidates = cg.getCandidates("beautifuloup", languageModel);
         for (String s : candidates) {
             System.out.println(s);
         }

@@ -36,7 +36,13 @@ public class LanguageModel implements Vocabulary, Serializable {
     @Override
     public boolean exists(String word) {
         // if the word exists in vocabulary, it must be a key
-        return unigramCounts.containsKey(word);
+        String[] tokens = word.split("\\s+");
+        for (String token : tokens) {
+            if (!unigramCounts.containsKey(token)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -71,7 +77,10 @@ public class LanguageModel implements Vocabulary, Serializable {
         double w2UnigramProb = unigramProbability(w2);
 
         double w1TotalCount = unigramCounts.get(w1);
-        int w2Count = bigramCounts.get(w1).get(w2);
+        int w2Count = 0;
+        if (bigramCounts.get(w1).containsKey(w2)) {
+            w2Count = bigramCounts.get(w1).get(w2);
+        }
         double w2BigramProb = w2Count / w1TotalCount;
 
         return LAMBDA * w2UnigramProb + (1 - LAMBDA) * w2BigramProb;
@@ -84,10 +93,11 @@ public class LanguageModel implements Vocabulary, Serializable {
      * @param sentence
      * @return
      */
-    public double computeProbability(String[] sentence) {
-        double prob = Math.log(unigramProbability(sentence[0]));
-        for (int i = 1; i < sentence.length; ++i)
-            prob += Math.log(bigramProbability(sentence[i-1], sentence[i]));
+    public double computeProbability(String sentence) {
+        String[] tokens = sentence.split("\\s+");
+        double prob = Math.log(unigramProbability(tokens[0]));
+        for (int i = 1; i < tokens.length; ++i)
+            prob += Math.log(bigramProbability(tokens[i-1], tokens[i]));
         return prob;
     }
 
