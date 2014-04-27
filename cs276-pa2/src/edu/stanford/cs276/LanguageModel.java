@@ -90,10 +90,11 @@ public class LanguageModel implements Vocabulary, Serializable {
      * @param sentence
      * @return
      */
-    public double computeProbability(String[] sentence) {
-        double prob = Math.log(unigramProbability(sentence[0]));
-        for (int i = 1; i < sentence.length; ++i)
-            prob += Math.log(bigramProbability(sentence[i-1], sentence[i]));
+    public double computeProbability(String sentence) {
+        String[] tokens = sentence.split("\\s+");
+        double prob = Math.log(unigramProbability(tokens[0]));
+        for (int i = 1; i < tokens.length; ++i)
+            prob += Math.log(bigramProbability(tokens[i-1], tokens[i]));
         return prob;
     }
 
