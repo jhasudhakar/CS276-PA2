@@ -3,11 +3,14 @@ package edu.stanford.cs276;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RunCorrector {
 
     public static LanguageModel languageModel;
     public static NoisyChannelModel nsm;
+    public static CandidateGenerator cg;
 
 
     public static void main(String[] args) throws Exception {
@@ -64,6 +67,9 @@ public class RunCorrector {
         BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
         nsm.setProbabilityType(uniformOrEmpirical);
 
+        // Load candidate generator
+        cg = CandidateGenerator.get();
+
         int totalCount = 0;
         int yourCorrectCount = 0;
         String query = null;
@@ -74,11 +80,18 @@ public class RunCorrector {
          */
         while ((query = queriesFileReader.readLine()) != null) {
 
+            Set<String> candidates = cg.getCandidates(query, languageModel);
             String correctedQuery = query;
-            /*
-             * Your code here
-             */
-
+            double maxSoFar = 0;
+            for (String s : candidates) {
+                double prob = nsm.ecm_.editProbability(query, s, 1); // TODO: Calculate edit distance!
+                System.out.format("%s", s);
+                prob += languageModel.computeProbability(s);
+                if (prob > maxSoFar) {
+                    maxSoFar = prob;
+                    correctedQuery = s;
+                }
+            }
 
             if ("extra".equals(extra)) {
                 /*
