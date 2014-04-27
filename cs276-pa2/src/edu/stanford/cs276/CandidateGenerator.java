@@ -3,6 +3,7 @@ package edu.stanford.cs276;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import edu.stanford.cs276.util.Pair;
 
@@ -48,7 +49,10 @@ public class CandidateGenerator implements Serializable {
                 s2.append(" " + tokens[j]);
             }
             for (String c : candidates) {
-                results.add(s1.toString() + c + s2.toString());
+                String s = s1.toString() + c + s2.toString();
+                if (vocabulary.exists(s)) {
+                    results.add(s);
+                }
             }
         }
 
@@ -67,7 +71,10 @@ public class CandidateGenerator implements Serializable {
                 s2.append(" " + tokens[j]);
             }
             for (String c : candidates) {
-                results.add(s1.toString() + c + s2.toString());
+                String s = s1.toString() + c + s2.toString();
+                if (vocabulary.exists(s)) {
+                    results.add(s);
+                }
             }
         }
 
@@ -93,6 +100,7 @@ public class CandidateGenerator implements Serializable {
         candidates.addAll(vocabulary.known(edits2(token)));
         // If there are no candidates found, simply return.
         if (candidates.isEmpty()) {
+            System.out.println("No candidate found.");
             candidates.add(token);
         }
         return candidates;
