@@ -70,6 +70,8 @@ public class RunCorrector {
         // Load candidate generator
         cg = CandidateGenerator.get();
 
+        System.out.println("Load completed.");
+
         int totalCount = 0;
         int yourCorrectCount = 0;
         String query = null;
@@ -78,15 +80,16 @@ public class RunCorrector {
          * Each line in the file represents one query.  We loop over each query and find
          * the most likely correction
          */
+        double maxSoFar, prob;
         while ((query = queriesFileReader.readLine()) != null) {
 
             Set<String> candidates = cg.getCandidates(query, languageModel);
             String correctedQuery = query;
-            double maxSoFar = 0;
+            maxSoFar = Double.NEGATIVE_INFINITY;
             for (String s : candidates) {
-                double prob = nsm.ecm_.editProbability(query, s, 1); // TODO: Calculate edit distance!
-                System.out.format("%s", s);
+                prob = nsm.ecm_.editProbability(query, s, 1); // TODO: Calculate edit distance!
                 prob += languageModel.computeProbability(s);
+//                System.out.format("%s, %f\n", s, prob);
                 if (prob > maxSoFar) {
                     maxSoFar = prob;
                     correctedQuery = s;
@@ -118,6 +121,6 @@ public class RunCorrector {
         queriesFileReader.close();
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        // System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
+        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 }
