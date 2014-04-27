@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class EmpiricalCostModel implements EditCostModel{
-    // the alphabet, use Set to fast lookup
-    private Set<Character> alphabet;
-
     // meta character representing the beginning of a sentence
     private static char BEGIN_CHAR = '$';
+
+    // the alphabet, use Set to fast lookup
+    private Set<Character> alphabet;
 
     // all characters not present in the pre-defined alphabet
     // will be mapped to this character
@@ -49,113 +49,143 @@ public class EmpiricalCostModel implements EditCostModel{
             String noisy = parts[0];
             String clean = parts[1];
 
-            if (noisy.equals(clean)) {
-                // wow, no need to process
+            // determine edit type
+            Edit ed = determineEdit(clean, noisy);
+
+            if (ed == null) {
+                // wow, they're the same!
                 continue;
             }
 
-            // find first difference
-            int idx = 0;
-            for (; idx < noisy.length() && idx < clean.length(); ++idx) {
-                if (noisy.charAt(idx) != clean.charAt(idx)) {
-                    break;
-                }
-            }
-
-            // handle two special cases
-            if (idx == noisy.length()) {
-//                System.out.println("DELETION: ");
-//                System.out.println("    C: " + clean);
-//                System.out.println("    N: " + noisy + "*");
-//                System.out.println("       " + clean.substring(idx-1) + " --> " + clean.substring(idx));
-
-                incrementCount(clean.charAt(idx-1), clean.charAt(idx), deletionCounts);
-                continue;
-            }
-
-            if (idx == clean.length()) {
-//                System.out.println("INSERTION: ");
-//                System.out.println("    C: " + clean + "*");
-//                System.out.println("    N: " + noisy);
-//                System.out.println("       " + clean.substring(idx-1) + " --> " + noisy.substring(idx-1));
-
-                incrementCount(clean.charAt(idx-1), noisy.charAt(idx), insertionCounts);
-                continue;
-            }
-
-            String restOfNoisy = noisy.substring(idx + 1);
-            String restOfClean = clean.substring(idx + 1);
-            if (restOfNoisy.length() == restOfClean.length()) {
-                if (restOfNoisy.equals(restOfClean)) {
-//                    System.out.println("SUBSTITUTION: ");
-//                    System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx + 1) + "]" + restOfClean);
-//                    System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx + 1) + "]" + restOfNoisy);
-//                    System.out.println("       " + clean.substring(idx, idx+1) + " --> " + noisy.substring(idx, idx+1));
-
-                    incrementCount(clean.charAt(idx), noisy.charAt(idx), substitutionCounts);
-                } else if (restOfNoisy.length() > 0) {
-                    String restOfRestN = restOfNoisy.substring(1);
-                    String restOfRestC = restOfClean.substring(1);
-                    if (restOfRestN.equals(restOfRestC)) {
-//                        System.out.println("TRANSPOTITION: ");
-//                        System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx+2) + "]" + restOfRestC);
-//                        System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx+2) + "]" + restOfRestN);
-//                        System.out.println("       " + clean.substring(idx, idx+2) + " --> " + noisy.substring(idx, idx+2));
-
-                        incrementCount(clean.charAt(idx), clean.charAt(idx+1), transpositionCounts);
-                    } else {
-//                        System.out.println("I DONT UNDERSTAND:");
-//                        System.out.println("   C: " + clean);
-//                        System.out.println("   N: " + noisy);
-//                        pause();
-                    }
-                }
-            } else if (restOfNoisy.length() < restOfClean.length()) {
-                if (noisy.substring(idx).equals(restOfClean)) {
-//                    System.out.println("DELETION: ");
-//                    System.out.println("    C: " + clean);
-//                    System.out.println("    N: " + noisy.substring(0, idx) + "*" + noisy.substring(idx));
-
-                    if (idx == 0) {
-//                        System.out.println("       $" + clean.substring(idx, idx + 1) + " --> $");
-
-                        incrementCount(BEGIN_CHAR, clean.charAt(idx), deletionCounts);
-                    } else {
-//                        System.out.println("       " + clean.substring(idx - 1, idx + 1) + " --> " + clean.substring(idx-1, idx));
-
-                        incrementCount(clean.charAt(idx - 1), clean.charAt(idx), deletionCounts);
-                    }
-                } else {
-//                    System.out.println("I DONT UNDERSTAND:");
-//                    System.out.println("   C: " + clean);
-//                    System.out.println("   N: " + noisy);
-//                    pause();
-                }
-            } else {
-                if (clean.substring(idx).equals(restOfNoisy)) {
-//                    System.out.println("INSERTION: ");
-//                    System.out.println("    C: " + clean.substring(0, idx) + "*" + clean.substring(idx));
-//                    System.out.println("    N: " + noisy);
-                    if (idx == 0) {
-//                        System.out.println("       $" + " --> $" + noisy.substring(idx, idx + 1));
-
-                        incrementCount(BEGIN_CHAR, noisy.charAt(idx), insertionCounts);
-                    } else {
-//                        System.out.println("       " + clean.substring(idx - 1, idx) + " --> " + noisy.substring(idx-1, idx + 1));
-
-                        incrementCount(clean.charAt(idx-1), noisy.charAt(idx), insertionCounts);
-                    }
-                } else {
-                    System.out.println("I DONT UNDERSTAND:");
-                    System.out.println("   C: " + clean);
-                    System.out.println("   N: " + noisy);
-                    pause();
-                }
+            if (ed.type == EditType.DELETION) {
+                incrementCount(ed.x, ed.y, deletionCounts);
+            } else if (ed.type == EditType.INSERTION) {
+                incrementCount(ed.x, ed.y, insertionCounts);
+            } else if (ed.type == EditType.SUBSTITUTION) {
+                incrementCount(ed.x, ed.y, substitutionCounts);
+            } else if (ed.type == EditType.TRANSPOSITION) {
+                incrementCount(ed.x, ed.y, transpositionCounts);
             }
         }
 
         input.close();
         System.out.println("Done.");
+    }
+
+    /**
+     * Return the edit type and involved characters.
+     * Assume at most 1 edit between clean and noisy.
+     *
+     * @param clean the correct value
+     * @param noisy the corrupted value
+     * @return null if no edit, or an Edit instance
+     */
+    private Edit determineEdit(String clean, String noisy) {
+        if (clean.equals(noisy)) {
+            // the same
+            return null;
+        }
+
+        // find first difference
+        int idx = 0;
+        for (; idx < noisy.length() && idx < clean.length(); ++idx) {
+            if (noisy.charAt(idx) != clean.charAt(idx)) {
+                break;
+            }
+        }
+
+        // handle two special cases
+        if (idx == noisy.length()) {
+//                System.out.println("DELETION: ");
+//                System.out.println("    C: " + clean);
+//                System.out.println("    N: " + noisy + "*");
+//                System.out.println("       " + clean.substring(idx-1) + " --> " + clean.substring(idx));
+
+            return new Edit(EditType.DELETION, clean.charAt(idx-1), clean.charAt(idx));
+        }
+
+        if (idx == clean.length()) {
+//                System.out.println("INSERTION: ");
+//                System.out.println("    C: " + clean + "*");
+//                System.out.println("    N: " + noisy);
+//                System.out.println("       " + clean.substring(idx-1) + " --> " + noisy.substring(idx-1));
+
+            return new Edit(EditType.INSERTION, clean.charAt(idx-1), noisy.charAt(idx));
+        }
+
+        String restOfNoisy = noisy.substring(idx + 1);
+        String restOfClean = clean.substring(idx + 1);
+        if (restOfNoisy.length() == restOfClean.length()) {
+            if (restOfNoisy.equals(restOfClean)) {
+//                    System.out.println("SUBSTITUTION: ");
+//                    System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx + 1) + "]" + restOfClean);
+//                    System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx + 1) + "]" + restOfNoisy);
+//                    System.out.println("       " + clean.substring(idx, idx+1) + " --> " + noisy.substring(idx, idx+1));
+
+                return new Edit(EditType.SUBSTITUTION, clean.charAt(idx), noisy.charAt(idx));
+            } else if (restOfNoisy.length() > 0) {
+                String restOfRestN = restOfNoisy.substring(1);
+                String restOfRestC = restOfClean.substring(1);
+                if (restOfRestN.equals(restOfRestC)) {
+//                        System.out.println("TRANSPOTITION: ");
+//                        System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx+2) + "]" + restOfRestC);
+//                        System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx+2) + "]" + restOfRestN);
+//                        System.out.println("       " + clean.substring(idx, idx+2) + " --> " + noisy.substring(idx, idx+2));
+
+                    return new Edit(EditType.TRANSPOSITION, clean.charAt(idx), clean.charAt(idx+1));
+                } else {
+//                        System.out.println("I DONT UNDERSTAND:");
+//                        System.out.println("   C: " + clean);
+//                        System.out.println("   N: " + noisy);
+//                        pause();
+                }
+            }
+        } else if (restOfNoisy.length() < restOfClean.length()) {
+            if (noisy.substring(idx).equals(restOfClean)) {
+//                    System.out.println("DELETION: ");
+//                    System.out.println("    C: " + clean);
+//                    System.out.println("    N: " + noisy.substring(0, idx) + "*" + noisy.substring(idx));
+
+                if (idx == 0) {
+//                        System.out.println("       $" + clean.substring(idx, idx + 1) + " --> $");
+
+                    return new Edit(EditType.DELETION, BEGIN_CHAR, clean.charAt(idx));
+                } else {
+//                        System.out.println("       " + clean.substring(idx - 1, idx + 1) + " --> " + clean.substring(idx-1, idx));
+
+                    return new Edit(EditType.DELETION, clean.charAt(idx - 1), clean.charAt(idx));
+                }
+            } else {
+//                    System.out.println("I DONT UNDERSTAND:");
+//                    System.out.println("   C: " + clean);
+//                    System.out.println("   N: " + noisy);
+//                    pause();
+            }
+        } else {
+            if (clean.substring(idx).equals(restOfNoisy)) {
+//                    System.out.println("INSERTION: ");
+//                    System.out.println("    C: " + clean.substring(0, idx) + "*" + clean.substring(idx));
+//                    System.out.println("    N: " + noisy);
+                if (idx == 0) {
+//                        System.out.println("       $" + " --> $" + noisy.substring(idx, idx + 1));
+
+                    return new Edit(EditType.INSERTION, BEGIN_CHAR, noisy.charAt(idx));
+                } else {
+//                        System.out.println("       " + clean.substring(idx - 1, idx) + " --> " + noisy.substring(idx-1, idx + 1));
+
+                    return new Edit(EditType.INSERTION, clean.charAt(idx-1), noisy.charAt(idx));
+                }
+            } else {
+//                System.out.println("I DONT UNDERSTAND:");
+//                System.out.println("   C: " + clean);
+//                System.out.println("   N: " + noisy);
+//                pause();
+            }
+        }
+
+        // should never reach here
+        System.err.println("Shouldn't reach here.");
+        return null;
     }
 
     private void incrementCount(char x, char y, Map<Pair<Character, Character>, Integer> counts) {
@@ -227,6 +257,25 @@ public class EmpiricalCostModel implements EditCostModel{
         EmpiricalCostModel model = new EmpiricalCostModel(args[0]);
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
+        System.out.println("RUNNING TIME: "+totalTime+" ms. ");
+    }
+
+    /*
+     * helper enum and classes
+     */
+    private static enum EditType {
+        DELETION, INSERTION, SUBSTITUTION, TRANSPOSITION
+    }
+
+    private static class Edit {
+        private EditType type;
+        private char x;
+        private char y;
+
+        public Edit(EditType t, char x, char y) {
+            this.type = t;
+            this.x = x;
+            this.y = y;
+        }
     }
 }
