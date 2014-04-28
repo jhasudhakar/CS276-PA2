@@ -38,7 +38,7 @@ public class LanguageModel implements Vocabulary, Serializable {
     @Override
     public boolean exists(String word) {
         // if the word exists in vocabulary, it must be a key
-        String[] tokens = word.split("\\s+");
+        String[] tokens = word.trim().split("\\s+");
         if (tokens.length == 0) {
             return false;
         }
