@@ -12,7 +12,11 @@ pa2.pdf
 tmp/
 
 /data/
-cs276-pa2/data
+cs276-pa2/data/*
+!cs276-pa2/data/dev.queries.txt
+!cs276-pa2/data/dev.gold.txt
+!cs276-pa2/data/test.queries.txt
+!cs276-pa2/data/test.gold.txt
 cs276-pa2/bin
 cs276-pa2/classes
 cs276-pa2/languageModel
