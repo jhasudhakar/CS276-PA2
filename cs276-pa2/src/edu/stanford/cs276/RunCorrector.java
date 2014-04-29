@@ -62,15 +62,18 @@ public class RunCorrector {
         }
 
         // Load models from disk
+        System.out.println("Loading language model...");
         languageModel = LanguageModel.load();
+        System.out.println("-- Completed!");
+        System.out.println("Loading noisy channel model...");
         nsm = NoisyChannelModel.load();
+        System.out.println("-- Completed!");
+
         BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
         nsm.setProbabilityType(uniformOrEmpirical);
 
         // Load candidate generator
         cg = CandidateGenerator.get();
-
-        System.out.println("Load completed.");
 
         int totalCount = 0;
         int yourCorrectCount = 0;
