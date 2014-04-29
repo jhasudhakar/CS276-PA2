@@ -32,85 +32,14 @@ public class CandidateGenerator implements Serializable {
     // Generate all candidates for the target query
     public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
         Set<String> results = new HashSet<String>();
-        String[] tokens = query.split("\\s+");
-
-        // Single word
-        // System.out.println("Single word.");
-        for (int i = 0; i < tokens.length; i++) {
-            // Generate candidates
-            Set<String> candidates = getCandidatesForToken(tokens[i], vocabulary, 2);
-            // For each candidate, add token[0:i] + candidate + token[i+1:] to results
-            StringBuilder s1 = new StringBuilder();
-            for (int j = 0; j < i; j++) {
-                s1.append(tokens[j] + " ");
-            }
-            StringBuilder s2 = new StringBuilder();
-            for (int j = i + 1; j < tokens.length; j++) {
-                s2.append(" " + tokens[j]);
-            }
-            // If token[0:i] and token[i+1:] are not valid, continue
-            if (!vocabulary.exists(s1.toString() + s2.toString())) {
-                continue;
-            }
-            for (String c : candidates) {
-                results.add(s1.toString() + c.trim() + s2.toString());
-            }
-        }
-
-        // Combine two words at first
-        // System.out.println("Combine two words at first.");
-        for (int i = 0; i < tokens.length - 1; i++) {
-            String token = tokens[i] + tokens[i + 1];
-            Set<String> candidates = getCandidatesForToken(token, vocabulary, 1);
-            // For each candidate, add token[0:i] + candidate + token[i+2:] to results
-            StringBuilder s1 = new StringBuilder();
-            for  (int j = 0; j < i; j++) {
-                s1.append(tokens[j] + " ");
-            }
-            StringBuilder s2 = new StringBuilder();
-            for (int j = i + 2; j < tokens.length; j++) {
-                s2.append(" " + tokens[j]);
-            }
-            // If token[0:i] and token[i+1:] are not valid, continue
-            if (!vocabulary.exists(s1.toString() + s2.toString())) {
-                continue;
-            }
-            for (String c : candidates) {
-                results.add(s1.toString() + c.trim() + s2.toString());
-            }
+        Set<String> candidates = vocabulary.known(edits1(query));
+        results.addAll(candidates);
+        for (String s : candidates) {
+            results.addAll(vocabulary.known(edits1(s)));
         }
 
         // System.out.println("Number of candidates:" + results.size());
         return results;
-    }
-
-    /**
-     * Get candidates for a single word.
-     * @param token
-     * @param vocabulary
-     * @return
-     */
-    private static Set<String> getCandidatesForToken(String token, Vocabulary vocabulary, int distance) {
-        Set<String> candidates = new HashSet<String>();
-        // If the vocabulary exists in the dictionary, add it to our candidates set.
-        if (vocabulary.exists(token)) {
-            candidates.add(token);
-        }
-        // Add tokens that are within edit distance 1.
-        candidates.addAll(vocabulary.known(edits1(token)));
-        if (!candidates.isEmpty()) {
-            return candidates;
-        }
-        // Add tokens that are within edit distance 2.
-        if (candidates.isEmpty() || distance == 2) {
-            candidates.addAll(vocabulary.known(edits2(token)));
-        }
-        // If there are no candidates found, simply return.
-        if (candidates.isEmpty()) {
-            System.out.println("No candidate found.");
-            candidates.add(token);
-        }
-        return candidates;
     }
 
     /**
@@ -127,40 +56,27 @@ public class CandidateGenerator implements Serializable {
             splits.add(new Pair(word.substring(0, i), word.substring(i)));
         }
 
-        Set<String> deletes = new HashSet<String>();
-        for (Pair<String, String> p : splits) {
-            String w = p.getSecond();
-            if (w.length() >= 1) {
-                deletes.add(p.getFirst() + w.substring(1));
-            }
-        }
-
         Set<String> inserts = new HashSet<String>();
-        for (Pair<String, String> p : splits) {
-            String w1 = p.getFirst();
-            String w2 = p.getSecond();
-            for (Character c : alphabet) {
-                inserts.add(w1 + c + w2);
-            }
-        }
-
+        Set<String> deletes = new HashSet<String>();
         Set<String> replaces = new HashSet<String>();
-        for (Pair<String, String> p : splits) {
-            String w1 = p.getFirst();
-            String w2 = p.getSecond();
-            if (w2.length() >= 1) {
-                for (Character c : alphabet) {
-                    replaces.add(w1 + c + w2.substring(1));
-                }
-            }
-        }
-
         HashSet<String> transposes = new HashSet<String>();
         for (Pair<String, String> p : splits) {
             String w1 = p.getFirst();
             String w2 = p.getSecond();
+            if (isSingleChar(w1, w2)) {
+                continue;
+            }
+            for (Character c : alphabet) {
+                inserts.add(tidy(w1 + c + w2));
+            }
+            if (w2.length() >= 1) {
+                deletes.add(tidy(p.getFirst() + w2.substring(1)));
+                for (Character c : alphabet) {
+                    replaces.add(tidy(w1 + c + w2.substring(1)));
+                }
+            }
             if (w2.length() > 1) {
-                transposes.add(w1 + w2.charAt(1) + w2.charAt(0) + w2.substring(2));
+                transposes.add(tidy(w1 + w2.charAt(1) + w2.charAt(0) + w2.substring(2)));
             }
         }
 
@@ -172,27 +88,25 @@ public class CandidateGenerator implements Serializable {
         return results;
     }
 
-    /**
-     * Return all candidates whose edit distance are 2.
-     * @param word
-     * @return
-     */
-    private static Set<String> edits2(String word) {
-        Set<String> candidates = edits1(word);
-        Set<String> results = new HashSet<String>();
-        for (String s : candidates) {
-            results.addAll(edits1(s));
-        }
-        return results;
+    private static boolean isSingleChar(String w1, String w2) {
+        return (w1.length() == 0 || w1.charAt(w1.length() - 1) == ' ') && (w2.length() <= 1 || w2.charAt(1) == ' ');
+    }
+
+    private static String tidy(String s) {
+        return s.trim().replaceAll("\\s+", " ");
     }
 
     public static void main(String args[]) throws Exception {
+        System.out.println(isSingleChar("", "a world"));
+        System.out.println(isSingleChar("a world ", ""));
+        System.out.println(isSingleChar("a world", " a"));
         System.out.println("Test begins.");
         LanguageModel languageModel;
         languageModel = LanguageModel.load();
         System.out.println("Load finished.");
         CandidateGenerator cg = CandidateGenerator.get();
-        Set<String> candidates = cg.getCandidates("i wantto learndatabase", languageModel);
+        // Set<String> candidates = cg.getCandidates("i wantto learndatabase", languageModel);
+        Set<String> candidates = cg.getCandidates("page 1 page 2 page", languageModel);
         for (String s : candidates) {
             System.out.println(s);
         }

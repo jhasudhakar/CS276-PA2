@@ -12,6 +12,8 @@ public class RunCorrector {
     public static NoisyChannelModel nsm;
     public static CandidateGenerator cg;
 
+    private static double mu = 0.6;
+
 
     public static void main(String[] args) throws Exception {
 
@@ -88,7 +90,7 @@ public class RunCorrector {
             maxSoFar = Double.NEGATIVE_INFINITY;
             for (String s : candidates) {
                 prob = nsm.ecm_.editProbability(query, s, 1); // TODO: Calculate edit distance!
-                prob += languageModel.computeProbability(s);
+                prob += languageModel.computeProbability(s) * mu;
 //                System.out.format("%s, %f\n", s, prob);
                 if (prob > maxSoFar) {
                     maxSoFar = prob;
@@ -115,7 +117,7 @@ public class RunCorrector {
                     System.out.format("%d √: %s\n", totalCount, correctedQuery);
                     yourCorrectCount++;
                 } else {
-                    System.out.format("%d x: %s -> %s\n", totalCount, correctedQuery, goldQuery);
+                    System.out.format("%d x: %s -> %s -> %s\n", totalCount, query, correctedQuery, goldQuery);
                 }
                 totalCount++;
             } else {
