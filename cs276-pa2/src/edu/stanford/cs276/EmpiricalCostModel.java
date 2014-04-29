@@ -326,23 +326,4 @@ public class EmpiricalCostModel implements EditCostModel{
         long totalTime = endTime - startTime;
         System.out.println("RUNNING TIME: " + totalTime + " ms. ");
     }
-
-    /*
-     * helper enum and classes
-     */
-    private static enum EditType {
-        DELETION, INSERTION, SUBSTITUTION, TRANSPOSITION
-    }
-
-    private static class Edit {
-        private EditType type;
-        private char x;
-        private char y;
-
-        public Edit(EditType t, char x, char y) {
-            this.type = t;
-            this.x = x;
-            this.y = y;
-        }
-    }
 }
