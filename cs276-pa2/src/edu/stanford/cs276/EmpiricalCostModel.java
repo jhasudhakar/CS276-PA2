@@ -6,10 +6,7 @@ import edu.stanford.cs276.util.Pair;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class EmpiricalCostModel implements EditCostModel{
 
@@ -148,42 +145,44 @@ public class EmpiricalCostModel implements EditCostModel{
 
     @Override
     public double editProbability(String Q, String R, int distance) {
-        if (distance > 1) {
-            throw new RuntimeException("Not supported distance > 1 (passed in value = " + distance + ")");
-        }
-
         if (Q.equals(R)) {
             // no edit between them
             return Math.log(0.9);
         }
 
-        Edit edit = EditDistance.determineOneEdit(Q, R);
-        char x = characterClass(edit.x);
-        char y = characterClass(edit.y);
-        Pair<Character, Character> p = new Pair<Character, Character>(x, y);
+        List<Edit> edits = EditDistance.determineEdits(Q, R);
+        assert edits.size() > 0;
+        double prob = 0.0;
+        for (Edit edit : edits) {
+            char x = characterClass(edit.x);
+            char y = characterClass(edit.y);
+            Pair<Character, Character> p = new Pair<Character, Character>(x, y);
 
-        StringBuilder bigram = new StringBuilder("@@");
-        bigram.setCharAt(0, x);
-        bigram.setCharAt(1, y);
+            StringBuilder bigram = new StringBuilder("@@");
+            bigram.setCharAt(0, x);
+            bigram.setCharAt(1, y);
 
-        double count = 1;
-        double total = 2;
+            double count = 1;
+            double total = 2;
 
-        if (edit.type == EditType.DELETION) {
-            count = MapUtility.getWithFallback(deletionCounts, p, 0);
-            total = bigramCounts.get(bigram.toString());
-        } else if (edit.type == EditType.INSERTION) {
-            count = MapUtility.getWithFallback(insertionCounts, p, 0);
-            total = unigramCounts.get(x);
-        } else if (edit.type == EditType.SUBSTITUTION) {
-            count = MapUtility.getWithFallback(substitutionCounts, p, 0);
-            total = unigramCounts.get(x);
-        } else if (edit.type == EditType.TRANSPOSITION) {
-            count = MapUtility.getWithFallback(transpositionCounts, p, 0);
-            total = bigramCounts.get(bigram.toString());
+            if (edit.type == EditType.DELETION) {
+                count = MapUtility.getWithFallback(deletionCounts, p, 0);
+                total = bigramCounts.get(bigram.toString());
+            } else if (edit.type == EditType.INSERTION) {
+                count = MapUtility.getWithFallback(insertionCounts, p, 0);
+                total = unigramCounts.get(x);
+            } else if (edit.type == EditType.SUBSTITUTION) {
+                count = MapUtility.getWithFallback(substitutionCounts, p, 0);
+                total = unigramCounts.get(x);
+            } else if (edit.type == EditType.TRANSPOSITION) {
+                count = MapUtility.getWithFallback(transpositionCounts, p, 0);
+                total = bigramCounts.get(bigram.toString());
+            }
+
+            prob += Math.log(smooth(count, total));
         }
 
-        return Math.log(smooth(count, total));
+        return prob;
     }
 
     // apply Laplace smoothing
