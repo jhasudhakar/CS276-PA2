@@ -59,26 +59,26 @@ public class CandidateGenerator implements Serializable {
 
         // Combine two words at first
         // System.out.println("Combine two words at first.");
-        for (int i = 0; i < tokens.length - 1; i++) {
-            String token = tokens[i] + tokens[i + 1];
-            Set<String> candidates = getCandidatesForToken(token, vocabulary, 1);
-            // For each candidate, add token[0:i] + candidate + token[i+2:] to results
-            StringBuilder s1 = new StringBuilder();
-            for  (int j = 0; j < i; j++) {
-                s1.append(tokens[j] + " ");
-            }
-            StringBuilder s2 = new StringBuilder();
-            for (int j = i + 2; j < tokens.length; j++) {
-                s2.append(" " + tokens[j]);
-            }
-            // If token[0:i] and token[i+1:] are not valid, continue
-            if (!vocabulary.exists(s1.toString() + s2.toString())) {
-                continue;
-            }
-            for (String c : candidates) {
-                results.add(s1.toString() + c.trim() + s2.toString());
-            }
-        }
+//        for (int i = 0; i < tokens.length - 1; i++) {
+//            String token = tokens[i] + tokens[i + 1];
+//            Set<String> candidates = getCandidatesForToken(token, vocabulary, 1);
+//            For each candidate, add token[0:i] + candidate + token[i+2:] to results
+//            StringBuilder s1 = new StringBuilder();
+//            for  (int j = 0; j < i; j++) {
+//                s1.append(tokens[j] + " ");
+//            }
+//            StringBuilder s2 = new StringBuilder();
+//            for (int j = i + 2; j < tokens.length; j++) {
+//                s2.append(" " + tokens[j]);
+//            }
+//            If token[0:i] and token[i+1:] are not valid, continue
+//            if (!vocabulary.exists(s1.toString() + s2.toString())) {
+//                continue;
+//            }
+//            for (String c : candidates) {
+//                results.add(s1.toString() + c.trim() + s2.toString());
+//            }
+//        }
 
         // System.out.println("Number of candidates:" + results.size());
         return results;
@@ -102,9 +102,9 @@ public class CandidateGenerator implements Serializable {
             return candidates;
         }
         // Add tokens that are within edit distance 2.
-        if (candidates.isEmpty() || distance == 2) {
-            candidates.addAll(vocabulary.known(edits2(token)));
-        }
+//        if (candidates.isEmpty() || distance == 2) {
+//            candidates.addAll(vocabulary.known(edits2(token)));
+//        }
         // If there are no candidates found, simply return.
         if (candidates.isEmpty()) {
             System.out.println("No candidate found.");
