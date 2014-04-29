@@ -129,9 +129,14 @@ public class CandidateGenerator implements Serializable {
 
         Set<String> deletes = new HashSet<String>();
         for (Pair<String, String> p : splits) {
-            String w = p.getSecond();
-            if (w.length() >= 1) {
-                deletes.add(p.getFirst() + w.substring(1));
+            String w1 = p.getFirst();
+            String w2 = p.getSecond();
+
+            if (w1.length() == 0 && w2.length() == 1)
+                continue;
+
+            if (w2.length() >= 1) {
+                deletes.add(w1 + w2.substring(1));
             }
         }
 
