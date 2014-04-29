@@ -8,6 +8,7 @@ public class BuildModels {
     public static NoisyChannelModel noisyChannelModel;
 
     public static void main(String[] args) throws Exception {
+        long startTime = System.currentTimeMillis();
 
         String trainingCorpus = null;
         String editsFile = null;
@@ -32,8 +33,12 @@ public class BuildModels {
         noisyChannelModel = NoisyChannelModel.create(editsFile);
 
         // Save the models to disk
+        System.out.println("Saving noisy channel model...");
         noisyChannelModel.save();
+        System.out.println("-- Completed!");
+        System.out.println("Saving language model...");
         languageModel.save();
+        System.out.println("-- Completed!");
 
         if ("extra".equals(extra)) {
             /*
@@ -44,5 +49,8 @@ public class BuildModels {
              * implementations without the "extra" parameter.
              */
         }
+        long endTime   = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 }
