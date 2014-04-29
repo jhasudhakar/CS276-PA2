@@ -51,10 +51,11 @@ public class EditDistance {
 
         B[0][0] = 'N';
 
-        // run DP to determine minimal edits
+        // 1. run DP to determine minimal #edits
+        // store edits in B
         for (int i = 1; i <= N; ++i) {
             for (int j = 1; j <= M; ++j) {
-                // 1. compute min(deletion, insertion, substitution) first
+                // a. compute min(deletion, insertion, substitution) first
                 if (clean.charAt(i-1) == noisy.charAt(j-1)) {
                     D[i][j] = D[i-1][j-1];
                     B[i][j] = 'N';
@@ -76,7 +77,7 @@ public class EditDistance {
                     }
                 }
 
-                // 2. compute transposition if possible
+                // b. consider transposition if possible
                 if (i > 1 && j > 1
                         && (clean.charAt(i-1) == noisy.charAt(j-2))
                         && (clean.charAt(i-2) == noisy.charAt(j-1))) {
@@ -89,35 +90,81 @@ public class EditDistance {
             }
         }
 
-        System.out.println(String.format("ED(%s, %s) = %d", clean, noisy, D[N][M]));
+//        System.out.println(String.format("ED(%s, %s) = %d", clean, noisy, D[N][M]));
 
+        // 2. backtrace to determine which edits happened
+        List<Edit> edits = new ArrayList<Edit>();
         int i = N, j = M;
         while (i > -1 && j > -1) {
-            System.out.println("   "  + i + ", " + j + ": " + B[i][j]);
+//            System.out.println("   "  + i + ", " + j + ": " + B[i][j]);
             if (B[i][j] == 'I') {
+//                if (i > 0) {
+//                    System.out.println("  Insertion: " + clean.charAt(i - 1) + ", " + noisy.charAt(j - 1));
+//                } else {
+//                    System.out.println("  Insertion: " + '$' + ", " + noisy.charAt(j-1));
+//                }
+                char x = i > 0 ? clean.charAt(i-1) : '$';
+                char y = noisy.charAt(j-1);
+                edits.add(new Edit(EditType.INSERTION, x, y));
+
                 --j;
             } else if (B[i][j] == 'D') {
+//                if (i > 1) {
+//                    System.out.println("  Deletion: " + clean.charAt(i-2) + ", " + clean.charAt(i - 1));
+//                } else {
+//                    System.out.println("  Deletion: " + '$' + ", " + clean.charAt(i - 1));
+//                }
+                char x = i > 1 ? clean.charAt(i-2) : '$';
+                char y = clean.charAt(i-1);
+                edits.add(new Edit(EditType.DELETION, x, y));
+
                 --i;
             } else if (B[i][j] == 'T') {
+//                System.out.println("  Transposition: " + clean.substring(i-2, i));
+                char x = clean.charAt(i-2);
+                char y = clean.charAt(i-1);
+                edits.add(new Edit(EditType.TRANSPOSITION, x, y));
+
                 i -= 2;
                 j -= 2;
             } else {
+                if (B[i][j] == 'S') {
+//                    System.out.println("  Substitution: " + clean.charAt(i-1) + ", " + noisy.charAt(j-1));
+
+                    char x = clean.charAt(i-1);
+                    char y = noisy.charAt(j-1);
+                    edits.add(new Edit(EditType.SUBSTITUTION, x, y));
+                }
                 --i;
                 --j;
             }
         }
 
-        List<Edit> edits = new ArrayList<Edit>();
+//        for (Edit edit : edits) {
+//            System.out.println("  " + edit);
+//        }
+
         return edits;
     }
 
     public static void main(String[] args) {
+        // no edit
         determineEdits("abcd", "abcd");
+        // substitution at beginning
+        determineEdits("abcd", "bbcd");
+        // substitution not at beginning
         determineEdits("abcd", "accd");
+        // deletion at beginning
+        determineEdits("abcd", "bcd");
+        // deletion not at beginning
         determineEdits("abcd", "acd");
+        // insertion at beginning
         determineEdits("abcd", "aabcd");
-        determineEdits("abcd", "acbd");
+        // insertion not at beginning
+        determineEdits("abcd", "axbcd");
+        // deletion and tranposition
         determineEdits("cs276 query", "cs276qeury");
+        // 3 substitutions?
         determineEdits("on facebook share on twitter", "on face ppk share on twitter");
     }
 }
