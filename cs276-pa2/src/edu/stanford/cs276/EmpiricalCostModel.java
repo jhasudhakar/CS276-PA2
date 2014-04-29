@@ -1,6 +1,6 @@
 package edu.stanford.cs276;
 
-import edu.stanford.cs276.util.CounterUtility;
+import edu.stanford.cs276.util.MapUtility;
 import edu.stanford.cs276.util.Pair;
 
 import java.io.BufferedReader;
@@ -85,16 +85,16 @@ public class EmpiricalCostModel implements EditCostModel{
         StringBuilder bigram = new StringBuilder("@@");
 
         // handle beginning character
-        CounterUtility.incrementCount(BEGIN_CHAR, unigramCounts);
+        MapUtility.incrementCount(BEGIN_CHAR, unigramCounts);
 
         char prevChar = BEGIN_CHAR;
         for (int i = 0; i < word.length(); ++i) {
             char currChar = characterClass(word.charAt(i));
-            CounterUtility.incrementCount(currChar, unigramCounts);
+            MapUtility.incrementCount(currChar, unigramCounts);
 
             bigram.setCharAt(0, prevChar);
             bigram.setCharAt(1, currChar);
-            CounterUtility.incrementCount(bigram.toString(), bigramCounts);
+            MapUtility.incrementCount(bigram.toString(), bigramCounts);
 
             prevChar = currChar;
         }
@@ -213,6 +213,7 @@ public class EmpiricalCostModel implements EditCostModel{
 
         // should never reach here
         System.err.println("Shouldn't reach here.");
+        System.out.println(clean + " " + noisy);
         return null;
     }
 
@@ -223,7 +224,7 @@ public class EmpiricalCostModel implements EditCostModel{
 
         // increment corresponding count
         Pair<Character, Character> p = new Pair<Character, Character>(xClass, yClass);
-        CounterUtility.incrementCount(p, counts);
+        MapUtility.incrementCount(p, counts);
     }
 
     private void loadAlphabet() {
@@ -297,16 +298,16 @@ public class EmpiricalCostModel implements EditCostModel{
         double total = 2;
 
         if (edit.type == EditType.DELETION) {
-            count = deletionCounts.get(p);
+            count = MapUtility.getWithFallback(deletionCounts, p, 0);
             total = bigramCounts.get(bigram.toString());
         } else if (edit.type == EditType.INSERTION) {
-            count = insertionCounts.get(p);
+            count = MapUtility.getWithFallback(insertionCounts, p, 0);
             total = unigramCounts.get(x);
         } else if (edit.type == EditType.SUBSTITUTION) {
-            count = substitutionCounts.get(p);
+            count = MapUtility.getWithFallback(substitutionCounts, p, 0);
             total = unigramCounts.get(x);
         } else if (edit.type == EditType.TRANSPOSITION) {
-            count = transpositionCounts.get(p);
+            count = MapUtility.getWithFallback(transpositionCounts, p, 0);
             total = bigramCounts.get(bigram.toString());
         }
 
