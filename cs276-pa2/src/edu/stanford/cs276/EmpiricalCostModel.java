@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class EmpiricalCostModel implements EditCostModel{
-    // meta character representing the beginning of a sentence
-    private static char BEGIN_CHAR = '$';
 
     // the alphabet, use Set to fast lookup
     private Set<Character> alphabet;
@@ -57,7 +55,7 @@ public class EmpiricalCostModel implements EditCostModel{
             updateCharacterCounts(clean);
 
             // determine edit type
-            Edit ed = determineEdit(clean, noisy);
+            Edit ed = EditDistance.determineOneEdit(clean, noisy);
 
             if (ed == null) {
                 // wow, they're the same!
@@ -85,9 +83,9 @@ public class EmpiricalCostModel implements EditCostModel{
         StringBuilder bigram = new StringBuilder("@@");
 
         // handle beginning character
-        MapUtility.incrementCount(BEGIN_CHAR, unigramCounts);
+        MapUtility.incrementCount(EditDistance.BEGIN_CHAR, unigramCounts);
 
-        char prevChar = BEGIN_CHAR;
+        char prevChar = EditDistance.BEGIN_CHAR;
         for (int i = 0; i < word.length(); ++i) {
             char currChar = characterClass(word.charAt(i));
             MapUtility.incrementCount(currChar, unigramCounts);
@@ -98,123 +96,6 @@ public class EmpiricalCostModel implements EditCostModel{
 
             prevChar = currChar;
         }
-    }
-
-    /**
-     * Return the edit type and involved characters.
-     * Assume at most 1 edit between clean and noisy.
-     *
-     * @param clean the correct value
-     * @param noisy the corrupted value
-     * @return null if no edit, or an Edit instance
-     */
-    private Edit determineEdit(String clean, String noisy) {
-        if (clean.equals(noisy)) {
-            // the same
-            return null;
-        }
-
-        // find first difference
-        int idx = 0;
-        for (; idx < noisy.length() && idx < clean.length(); ++idx) {
-            if (noisy.charAt(idx) != clean.charAt(idx)) {
-                break;
-            }
-        }
-
-        // handle two special cases
-        if (idx == noisy.length()) {
-//                System.out.println("DELETION: ");
-//                System.out.println("    C: " + clean);
-//                System.out.println("    N: " + noisy + "*");
-//                System.out.println("       " + clean.substring(idx-1) + " --> " + clean.substring(idx));
-
-            return new Edit(EditType.DELETION, clean.charAt(idx-1), clean.charAt(idx));
-        }
-
-        if (idx == clean.length()) {
-//                System.out.println("INSERTION: ");
-//                System.out.println("    C: " + clean + "*");
-//                System.out.println("    N: " + noisy);
-//                System.out.println("       " + clean.substring(idx-1) + " --> " + noisy.substring(idx-1));
-
-            return new Edit(EditType.INSERTION, clean.charAt(idx-1), noisy.charAt(idx));
-        }
-
-        String restOfNoisy = noisy.substring(idx + 1);
-        String restOfClean = clean.substring(idx + 1);
-        if (restOfNoisy.length() == restOfClean.length()) {
-            if (restOfNoisy.equals(restOfClean)) {
-//                    System.out.println("SUBSTITUTION: ");
-//                    System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx + 1) + "]" + restOfClean);
-//                    System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx + 1) + "]" + restOfNoisy);
-//                    System.out.println("       " + clean.substring(idx, idx+1) + " --> " + noisy.substring(idx, idx+1));
-
-                return new Edit(EditType.SUBSTITUTION, clean.charAt(idx), noisy.charAt(idx));
-            } else if (restOfNoisy.length() > 0) {
-                String restOfRestN = restOfNoisy.substring(1);
-                String restOfRestC = restOfClean.substring(1);
-                if (restOfRestN.equals(restOfRestC)) {
-//                        System.out.println("TRANSPOTITION: ");
-//                        System.out.println("    C: " + clean.substring(0, idx) + "[" + clean.substring(idx, idx+2) + "]" + restOfRestC);
-//                        System.out.println("    N: " + noisy.substring(0, idx) + "[" + noisy.substring(idx, idx+2) + "]" + restOfRestN);
-//                        System.out.println("       " + clean.substring(idx, idx+2) + " --> " + noisy.substring(idx, idx+2));
-
-                    return new Edit(EditType.TRANSPOSITION, clean.charAt(idx), clean.charAt(idx+1));
-                } else {
-//                        System.out.println("I DONT UNDERSTAND:");
-//                        System.out.println("   C: " + clean);
-//                        System.out.println("   N: " + noisy);
-//                        pause();
-                }
-            }
-        } else if (restOfNoisy.length() < restOfClean.length()) {
-            if (noisy.substring(idx).equals(restOfClean)) {
-//                    System.out.println("DELETION: ");
-//                    System.out.println("    C: " + clean);
-//                    System.out.println("    N: " + noisy.substring(0, idx) + "*" + noisy.substring(idx));
-
-                if (idx == 0) {
-//                        System.out.println("       $" + clean.substring(idx, idx + 1) + " --> $");
-
-                    return new Edit(EditType.DELETION, BEGIN_CHAR, clean.charAt(idx));
-                } else {
-//                        System.out.println("       " + clean.substring(idx - 1, idx + 1) + " --> " + clean.substring(idx-1, idx));
-
-                    return new Edit(EditType.DELETION, clean.charAt(idx - 1), clean.charAt(idx));
-                }
-            } else {
-//                    System.out.println("I DONT UNDERSTAND:");
-//                    System.out.println("   C: " + clean);
-//                    System.out.println("   N: " + noisy);
-//                    pause();
-            }
-        } else {
-            if (clean.substring(idx).equals(restOfNoisy)) {
-//                    System.out.println("INSERTION: ");
-//                    System.out.println("    C: " + clean.substring(0, idx) + "*" + clean.substring(idx));
-//                    System.out.println("    N: " + noisy);
-                if (idx == 0) {
-//                        System.out.println("       $" + " --> $" + noisy.substring(idx, idx + 1));
-
-                    return new Edit(EditType.INSERTION, BEGIN_CHAR, noisy.charAt(idx));
-                } else {
-//                        System.out.println("       " + clean.substring(idx - 1, idx) + " --> " + noisy.substring(idx-1, idx + 1));
-
-                    return new Edit(EditType.INSERTION, clean.charAt(idx-1), noisy.charAt(idx));
-                }
-            } else {
-//                System.out.println("I DONT UNDERSTAND:");
-//                System.out.println("   C: " + clean);
-//                System.out.println("   N: " + noisy);
-//                pause();
-            }
-        }
-
-        // should never reach here
-        System.err.println("Shouldn't reach here.");
-        System.out.println(clean + " " + noisy);
-        return null;
     }
 
     private void incrementEditCount(char x, char y, Map<Pair<Character, Character>, Integer> counts) {
@@ -234,7 +115,7 @@ public class EmpiricalCostModel implements EditCostModel{
         }
 
         // add begin of sentence meta character
-        alphabet.add(BEGIN_CHAR);
+        alphabet.add(EditDistance.BEGIN_CHAR);
 
         final String unknownCharCandidates = "~!@#$%^&*";
         int i = 0;
@@ -265,15 +146,6 @@ public class EmpiricalCostModel implements EditCostModel{
         return unknownCharacter;
     }
 
-    static void pause() {
-        try {
-            // wait for human judgement
-            System.in.read();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public double editProbability(String Q, String R, int distance) {
         if (distance > 1) {
@@ -285,7 +157,7 @@ public class EmpiricalCostModel implements EditCostModel{
             return Math.log(0.9);
         }
 
-        Edit edit = determineEdit(Q, R);
+        Edit edit = EditDistance.determineOneEdit(Q, R);
         char x = characterClass(edit.x);
         char y = characterClass(edit.y);
         Pair<Character, Character> p = new Pair<Character, Character>(x, y);
