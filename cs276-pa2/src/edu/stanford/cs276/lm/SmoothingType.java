@@ -6,4 +6,5 @@ package edu.stanford.cs276.lm;
 public enum SmoothingType {
     LINEAR_INTERPOLATION,
     ABSOLUTE_DISCOUNTING,
+    KNENSER_NEY_SMOOTHING,
 }

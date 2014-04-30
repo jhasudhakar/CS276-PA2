@@ -2,6 +2,7 @@ package edu.stanford.cs276;
 
 import edu.stanford.cs276.lm.AbsoluteDiscountLM;
 import edu.stanford.cs276.lm.InterpolationLM;
+import edu.stanford.cs276.lm.KneserNeyLM;
 import edu.stanford.cs276.lm.SmoothingType;
 import edu.stanford.cs276.util.MapUtility;
 
@@ -38,6 +39,8 @@ public abstract class LanguageModel implements Vocabulary, Serializable {
             return new InterpolationLM(corpusFilePath);
         } else if (st == SmoothingType.ABSOLUTE_DISCOUNTING) {
             return new AbsoluteDiscountLM(corpusFilePath);
+        } else if (st == SmoothingType.KNENSER_NEY_SMOOTHING) {
+            return new KneserNeyLM(corpusFilePath);
         }
 
         return null;

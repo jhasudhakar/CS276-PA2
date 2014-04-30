@@ -58,9 +58,15 @@ public class AbsoluteDiscountLM extends LanguageModel {
         double bigramPart = discountedCount / prefixCount;
 
         // unigram part
-        double w2UnigramProb = unigramProbability(w2);
+        double w2UnigramProb = smoothedUnigramProbability(w2);
         double unigramPart = D * N1Plus * w2UnigramProb / prefixCount;
 
         return bigramPart + unigramPart;
+    }
+
+
+    // For Kneser-Ney LM
+    protected double smoothedUnigramProbability(final String w2) {
+        return unigramProbability(w2);
     }
 }
