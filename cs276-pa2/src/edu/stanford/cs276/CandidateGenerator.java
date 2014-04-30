@@ -1,11 +1,10 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.util.Pair;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.WeakHashMap;
-
-import edu.stanford.cs276.util.Pair;
 
 public class CandidateGenerator implements Serializable {
 

@@ -1,6 +1,6 @@
 package edu.stanford.cs276;
 
-import edu.stanford.cs276.util.CounterUtility;
+import edu.stanford.cs276.util.MapUtility;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -136,12 +136,12 @@ public class LanguageModel implements Vocabulary, Serializable {
                 }
 
                 // process first token: only need to update unigramCounts
-                CounterUtility.incrementCount(tokens[0], unigramCounts);
+                MapUtility.incrementCount(tokens[0], unigramCounts);
 
                 // process the rest tokens
                 for (int i = 1; i < tokens.length; ++i) {
                     // increment unigram count
-                    CounterUtility.incrementCount(tokens[i], unigramCounts);
+                    MapUtility.incrementCount(tokens[i], unigramCounts);
 
                     // increment bigram count
                     Map<String, Integer> counts = bigramCounts.get(tokens[i-1]);
@@ -149,7 +149,7 @@ public class LanguageModel implements Vocabulary, Serializable {
                         counts = new HashMap<String, Integer>();
                         bigramCounts.put(tokens[i-1], counts);
                     }
-                    CounterUtility.incrementCount(tokens[i], counts);
+                    MapUtility.incrementCount(tokens[i], counts);
                 }
             }
             input.close();
