@@ -1,4 +1,4 @@
-package edu.stanford.cs276;
+package edu.stanford.cs276.edit;
 
 public class Edit {
     private static String[] formats = {"del[%c,%c]", "ins[%c,%c]", "sub[%c,%c]", "trans[%c,%c]"};

@@ -1,4 +1,4 @@
-package edu.stanford.cs276;
+package edu.stanford.cs276.edit;
 
 import java.io.IOException;
 import java.util.ArrayList;

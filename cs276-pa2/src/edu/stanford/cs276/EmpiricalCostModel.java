@@ -1,5 +1,8 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.edit.Edit;
+import edu.stanford.cs276.edit.EditDistance;
+import edu.stanford.cs276.edit.EditType;
 import edu.stanford.cs276.util.MapUtility;
 import edu.stanford.cs276.util.Pair;
 
