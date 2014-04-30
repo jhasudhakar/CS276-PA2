@@ -12,7 +12,7 @@ public class RunCorrector {
     public static NoisyChannelModel nsm;
     public static CandidateGenerator cg;
 
-    private static double mu = 0.6;
+    private static double mu = 1.5;
 
 
     public static void main(String[] args) throws Exception {
@@ -63,6 +63,12 @@ public class RunCorrector {
             goldFileReader = new BufferedReader(new FileReader(new File(goldFilePath)));
         }
 
+        if (uniformOrEmpirical.equals("empirical")) {
+            mu = 1.5;
+        } else {
+            mu = 0.5;
+        }
+
         // Load models from disk
         System.out.println("Loading language model...");
         languageModel = LanguageModel.load();
@@ -92,7 +98,11 @@ public class RunCorrector {
             String correctedQuery = query;
             maxSoFar = Double.NEGATIVE_INFINITY;
             for (String s : candidates) {
-                prob = nsm.ecm_.editProbability(query, s, 1); // TODO: Calculate edit distance!
+                if (uniformOrEmpirical.equals("empirical")) {
+                    prob = nsm.ecm_.editProbability(query, s, 1);
+                } else {
+                    prob = nsm.ecm_.editProbability(query, s, editDistance(query, s));
+                }
                 prob += languageModel.computeProbability(s) * mu;
 //                System.out.format("%s, %f\n", s, prob);
                 if (prob > maxSoFar) {
@@ -134,4 +144,59 @@ public class RunCorrector {
         System.out.println(1.0 * yourCorrectCount / totalCount);
         System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
+
+    private static int editDistance(String s, String t) {
+        final int N = s.length();
+        final int M = t.length();
+
+        // allocate and initialize DP and backtrace matrix
+        int[][] D = new int[N+1][];
+        for (int i = 0; i <= N; ++i) {
+            D[i] = new int[M+1];
+        }
+
+        for (int i = 0; i <= N; ++i) {
+            D[i][0] = i;
+        }
+
+        for (int i = 0; i <= M; ++i) {
+            D[0][i] = i;
+        }
+
+        // 1. run DP to determine minimal #edits
+        // store edits in B
+        for (int i = 1; i <= N; ++i) {
+            for (int j = 1; j <= M; ++j) {
+                // a. compute min(deletion, insertion, substitution) first
+                if (s.charAt(i-1) == t.charAt(j-1)) {
+                    D[i][j] = D[i-1][j-1];
+                } else {
+                    int deletionCost = D[i-1][j] + 1;
+                    int insertionCost = D[i][j-1] + 1;
+                    if (deletionCost <= insertionCost) {
+                        D[i][j] = deletionCost;
+                    } else {
+                        D[i][j] = insertionCost;
+                    }
+
+                    int substitutionCost = D[i-1][j-1] + 1;
+                    if (substitutionCost < D[i][j]) {
+                        D[i][j] = substitutionCost;
+                    }
+                }
+
+                // b. consider transposition if possible
+                if (i > 1 && j > 1
+                        && (s.charAt(i-1) == t.charAt(j-2))
+                        && (s.charAt(i-2) == t.charAt(j-1))) {
+                    int transpositionCost = D[i-2][j-2] + 1;
+                    if (transpositionCost < D[i][j]) {
+                        D[i][j] = transpositionCost;
+                    }
+                }
+            }
+        }
+        return D[N][M];
+    }
+
 }
