@@ -31,7 +31,7 @@ public class RunDevSet {
         NoisyChannelModel ncm= NoisyChannelModel.create(editsFile);
         System.out.println("-- Completed!");
         System.out.println("Building language model...");
-        LanguageModel languageModel=  LanguageModel.create(trainingCorpus);
+        LanguageModel languageModel = LanguageModel.create("interpolation", trainingCorpus);
         System.out.println("-- Completed!");
 
         long endTime   = System.currentTimeMillis();

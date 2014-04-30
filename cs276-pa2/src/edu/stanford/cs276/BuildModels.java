@@ -29,7 +29,7 @@ public class BuildModels {
         }
         System.out.println("training corpus: " + args[0]);
 
-        languageModel =  LanguageModel.create(trainingCorpus);
+        languageModel =  LanguageModel.create("interpolation", trainingCorpus);
         noisyChannelModel = NoisyChannelModel.create(editsFile);
 
         // Save the models to disk
