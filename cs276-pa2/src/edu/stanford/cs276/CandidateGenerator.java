@@ -25,20 +25,43 @@ public class CandidateGenerator implements Serializable {
     public static final Character[] alphabet = {
                     'a','b','c','d','e','f','g','h','i','j','k','l','m','n',
                     'o','p','q','r','s','t','u','v','w','x','y','z',
-                    '0','1','2','3','4','5','6','7','8','9',
-                    ' ',',','-','\''};
+//                    '0','1','2','3','4','5','6','7','8','9',
+                    ' ','\''
+    };
 
     // Generate all candidates for the target query
     public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
         Set<String> results = new HashSet<String>();
-        Set<String> candidates = vocabulary.known(edits1(query));
+        Set<String> candidates = vocabulary.known(edits1_nospace(query));
         results.addAll(candidates);
         for (String s : candidates) {
-            results.addAll(vocabulary.known(edits1(s)));
+            results.addAll(vocabulary.known(edits1_nospace(s)));
         }
 
         // System.out.println("Number of candidates:" + results.size());
         return results;
+    }
+
+    public Set<String> getCandidatesForToken(String query, Vocabulary vocabulary) throws Exception {
+        Set<String> results = new HashSet<String>();
+        if (vocabulary.exists(query)) {
+            results.add(query);
+        }
+        Set<String> candidates = edits1(query);
+        results.addAll(vocabulary.known(candidates));
+        for (String s : candidates) {
+            results.addAll(vocabulary.known(edits1(s)));
+        }
+        return results;
+    }
+
+    public Set<String> getCandidatesForSplits(String word, LanguageModel languageModel) {
+        Set<String> splits = new HashSet<String>();
+        int length = word.length();
+        for (int i = 1; i < length; i++) {
+            splits.add(word.substring(0, i) + " " + word.substring(i));
+        }
+        return splits;
     }
 
     /**
@@ -71,6 +94,56 @@ public class CandidateGenerator implements Serializable {
             if (w2.length() >= 1) {
                 deletes.add(tidy(p.getFirst() + w2.substring(1)));
                 for (Character c : alphabet) {
+                    replaces.add(tidy(w1 + c + w2.substring(1)));
+                }
+            }
+            if (w2.length() > 1) {
+                transposes.add(tidy(w1 + w2.charAt(1) + w2.charAt(0) + w2.substring(2)));
+            }
+        }
+
+        results.addAll(deletes);
+        results.addAll(inserts);
+        results.addAll(replaces);
+        results.addAll(transposes);
+
+        return results;
+    }
+
+    /**
+     * Return all candidates whose edit distance are 1.
+     * @param word
+     * @return
+     */
+    private static Set<String> edits1_nospace(String word) {
+        Set<String> results = new HashSet<String>();
+
+        Set<Pair<String, String>> splits = new HashSet<Pair<String, String>>();
+        int length = word.length();
+        for (int i = 0; i <= length; i++) {
+            splits.add(new Pair(word.substring(0, i), word.substring(i)));
+        }
+
+        Set<String> inserts = new HashSet<String>();
+        Set<String> deletes = new HashSet<String>();
+        Set<String> replaces = new HashSet<String>();
+        HashSet<String> transposes = new HashSet<String>();
+        for (Pair<String, String> p : splits) {
+            String w1 = p.getFirst();
+            String w2 = p.getSecond();
+            if (isSingleChar(w1, w2)) {
+                continue;
+            }
+            for (Character c : alphabet) {
+                if (c == ' ')
+                    continue;
+                inserts.add(tidy(w1 + c + w2));
+            }
+            if (w2.length() >= 1) {
+                deletes.add(tidy(p.getFirst() + w2.substring(1)));
+                for (Character c : alphabet) {
+                    if (c == ' ')
+                        continue;
                     replaces.add(tidy(w1 + c + w2.substring(1)));
                 }
             }
