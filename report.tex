@@ -47,9 +47,19 @@ Each part is documented in detail in the following sections, with design decisio
 
 \section{Language Model}
 
-Smoothing...
+We referred to \cite{cs124-lm} and \cite{chen-goodman-99} for advanced smoothing techniques. There are 3 language models with different smoothing techniques in our implementation:
 
-\cite{chen-goodman-99}\cite{cs124-lm}
+\begin{enumerate}
+    \item \textbf{InterpolationLM}: implements the linear interpolation described in PA2 description.
+    \item \textbf{AbsoluteDiscountLM}: implements absolute discounting described in \cite{chen-goodman-99}.
+    \item \textbf{KneserNeyLM}: implements Kneser-Ney smoothing described in \cite{chen-goodman-99}.
+\end{enumerate}
+
+Specifically, since Kneser-Ney smoothing is an extension of absolute discounting, we implemented \texttt{KneserNeyLM} as a subclass of \texttt{AbsoluteDiscountLM}, which demonstrates clear modularization and extensibility of the system.
+
+A specific optimization we found worthwhile when building the language model is to avoid compute all possible bigram probabilities. If all possible probabilities are computed, the memory limit will be exceeded, because the vocabulary size is huge. Instead, we store raw $count(w)$ and $count(w_{i-1}w_i)$ and compute the probability with the counts on the fly when needed. Storing counts also has the advantage that they can be used by advanced smoothing techniques to generate higher-order data, such as $n_1$ and $n_2$ used in absolute discounting and $N_{+}({\cdot}w_i)$ in Kneser-Ney smoothing.
+
+On the other side, precomputing information of 1-dimension, higher-order data can greatly improve performance. For example, computing $N_{+}({\cdot}w_i)$ requires traversing all bigram counts. We can traverse the counts once and cache the result, or we can traverse the counts every time we need to compute $N_{+}({\cdot}w_i)$. Clearly, the former approach would be much faster as $|(w_{i-1},w_i): count(w_{i-1}w_i)>0|$ is large. This is an example of trading space for time.
 
 \section{Noisy Channel Model}
 
