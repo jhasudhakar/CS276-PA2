@@ -1,5 +1,7 @@
 package edu.stanford.cs276.lm;
 
+import edu.stanford.cs276.util.MapUtility;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,36 +15,27 @@ public class KneserNeyLM extends AbsoluteDiscountLM {
 
     public KneserNeyLM(String corpusFilePath) throws Exception {
         super(corpusFilePath);
-
-        possiblePrefixCount = new HashMap<String, Integer>();
     }
 
     @Override
     public void constructDictionaries(String corpusFilePath) throws Exception {
         super.constructDictionaries(corpusFilePath);
 
+        possiblePrefixCount = new HashMap<String, Integer>();
+
         totalPairs = 0;
         for (Map<String, Integer> w2s : bigramCounts.values()) {
             totalPairs += w2s.size();
+
+            for (String w2 : w2s.keySet()) {
+                MapUtility.incrementCount(w2, possiblePrefixCount);
+            }
         }
     }
 
     private double possiblePrefix(final String w2) {
         Integer totalPrefix = possiblePrefixCount.get(w2);
-        if (totalPrefix == null) {
-            // compute on-the-fly
-            int total = 0;
-            for (Map<String, Integer> w2s : bigramCounts.values()) {
-                if (w2s.containsKey(w2)) {
-                    ++total;
-                }
-            }
-
-            totalPrefix = total;
-            possiblePrefixCount.put(w2, totalPrefix);
-        }
-
-        return totalPrefix;
+        return totalPrefix == null ? 1 : totalPrefix;
     }
 
     @Override
