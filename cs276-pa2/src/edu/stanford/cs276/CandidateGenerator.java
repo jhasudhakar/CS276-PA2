@@ -47,8 +47,11 @@ public class CandidateGenerator implements Serializable {
         if (vocabulary.exists(query)) {
             results.add(query);
         }
-        Set<String> candidates = edits1(query);
-        results.addAll(vocabulary.known(candidates));
+        Set<String> candidates = vocabulary.known(edits1_nospace(query));
+        results.addAll(candidates);
+        if (!candidates.isEmpty()) {
+            return results;
+        }
         for (String s : candidates) {
             results.addAll(vocabulary.known(edits1(s)));
         }
@@ -131,24 +134,21 @@ public class CandidateGenerator implements Serializable {
         for (Pair<String, String> p : splits) {
             String w1 = p.getFirst();
             String w2 = p.getSecond();
-            if (isSingleChar(w1, w2)) {
-                continue;
-            }
             for (Character c : alphabet) {
                 if (c == ' ')
                     continue;
                 inserts.add(tidy(w1 + c + w2));
             }
             if (w2.length() >= 1) {
-                deletes.add(tidy(p.getFirst() + w2.substring(1)));
+                deletes.add(p.getFirst() + w2.substring(1));
                 for (Character c : alphabet) {
                     if (c == ' ')
                         continue;
-                    replaces.add(tidy(w1 + c + w2.substring(1)));
+                    replaces.add(w1 + c + w2.substring(1));
                 }
             }
             if (w2.length() > 1) {
-                transposes.add(tidy(w1 + w2.charAt(1) + w2.charAt(0) + w2.substring(2)));
+                transposes.add(w1 + w2.charAt(1) + w2.charAt(0) + w2.substring(2));
             }
         }
 
