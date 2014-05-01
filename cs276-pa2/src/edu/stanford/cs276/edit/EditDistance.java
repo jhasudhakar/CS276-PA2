@@ -296,4 +296,58 @@ public class EditDistance {
         // 3 substitutions?
         determineEdits("on facebook share on twitter", "on face ppk share on twitter");
     }
+
+    public static int editDistance(String s, String t) {
+        final int N = s.length();
+        final int M = t.length();
+
+        // allocate and initialize DP and backtrace matrix
+        int[][] D = new int[N+1][];
+        for (int i = 0; i <= N; ++i) {
+            D[i] = new int[M+1];
+        }
+
+        for (int i = 0; i <= N; ++i) {
+            D[i][0] = i;
+        }
+
+        for (int i = 0; i <= M; ++i) {
+            D[0][i] = i;
+        }
+
+        // 1. run DP to determine minimal #edits
+        // store edits in B
+        for (int i = 1; i <= N; ++i) {
+            for (int j = 1; j <= M; ++j) {
+                // a. compute min(deletion, insertion, substitution) first
+                if (s.charAt(i-1) == t.charAt(j-1)) {
+                    D[i][j] = D[i-1][j-1];
+                } else {
+                    int deletionCost = D[i-1][j] + 1;
+                    int insertionCost = D[i][j-1] + 1;
+                    if (deletionCost <= insertionCost) {
+                        D[i][j] = deletionCost;
+                    } else {
+                        D[i][j] = insertionCost;
+                    }
+
+                    int substitutionCost = D[i-1][j-1] + 1;
+                    if (substitutionCost < D[i][j]) {
+                        D[i][j] = substitutionCost;
+                    }
+                }
+
+                // b. consider transposition if possible
+                if (i > 1 && j > 1
+                        && (s.charAt(i-1) == t.charAt(j-2))
+                        && (s.charAt(i-2) == t.charAt(j-1))) {
+                    int transpositionCost = D[i-2][j-2] + 1;
+                    if (transpositionCost < D[i][j]) {
+                        D[i][j] = transpositionCost;
+                    }
+                }
+            }
+        }
+        return D[N][M];
+    }
 }

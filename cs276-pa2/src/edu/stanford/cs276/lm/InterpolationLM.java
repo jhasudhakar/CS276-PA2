@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public class InterpolationLM extends LanguageModel {
     // for bigram probability interpolation
-    private static double LAMBDA = 0.1;
+    private static double LAMBDA = 0.05;
 
     public InterpolationLM(String corpusFilePath) throws Exception {
         super(corpusFilePath);

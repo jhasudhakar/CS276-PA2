@@ -5,7 +5,6 @@ import edu.stanford.cs276.lm.SmoothingType;
 
 public class BuildModels {
 
-    public static double MU = .05;
     public static LanguageModel languageModel;
     public static NoisyChannelModel noisyChannelModel;
 
