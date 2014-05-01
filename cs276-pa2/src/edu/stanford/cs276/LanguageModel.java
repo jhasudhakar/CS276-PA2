@@ -19,7 +19,7 @@ public class LanguageModel implements Vocabulary, Serializable {
     // the singleton instance
     private static LanguageModel lm_;
     // for bigram probability interpolation
-    private static double LAMBDA = 0.1;
+    private static double LAMBDA = 0.05;
 
     // the number of terms in the training corpus
     private double totalTokens;
