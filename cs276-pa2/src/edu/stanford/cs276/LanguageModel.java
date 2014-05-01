@@ -1,5 +1,9 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.lm.AbsoluteDiscountLM;
+import edu.stanford.cs276.lm.InterpolationLM;
+import edu.stanford.cs276.lm.KneserNeyLM;
+import edu.stanford.cs276.lm.SmoothingType;
 import edu.stanford.cs276.util.MapUtility;
 
 import java.io.BufferedReader;
@@ -15,24 +19,31 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class LanguageModel implements Vocabulary, Serializable {
-    // the singleton instance
-    private static LanguageModel lm_;
-    // for bigram probability interpolation
-    private static double LAMBDA = 0.1;
-
+public abstract class LanguageModel implements Vocabulary, Serializable {
     // the number of terms in the training corpus
-    private double totalTokens;
+    protected double totalTokens;
     // total number of terms
-    private double totalTerms;
+    protected double totalTerms;
     // w -> probability
-    private Map<String, Integer> unigramCounts;
+    protected Map<String, Integer> unigramCounts;
     // <w1, w2> -> probability
-    private Map<String, Map<String, Integer>> bigramCounts;
+    protected Map<String, Map<String, Integer>> bigramCounts;
 
     // Do not call constructor directly since this is a Singleton
-    private LanguageModel(String corpusFilePath) throws Exception {
+    protected LanguageModel(String corpusFilePath) throws Exception {
         constructDictionaries(corpusFilePath);
+    }
+
+    public static LanguageModel create(SmoothingType st, final String corpusFilePath) throws Exception {
+        if (st == SmoothingType.LINEAR_INTERPOLATION) {
+            return new InterpolationLM(corpusFilePath);
+        } else if (st == SmoothingType.ABSOLUTE_DISCOUNTING) {
+            return new AbsoluteDiscountLM(corpusFilePath);
+        } else if (st == SmoothingType.KNENSER_NEY_SMOOTHING) {
+            return new KneserNeyLM(corpusFilePath);
+        }
+
+        return null;
     }
 
     @Override
@@ -82,21 +93,7 @@ public class LanguageModel implements Vocabulary, Serializable {
      * @param w2
      * @return the probability (with possible smoothing applied)
      */
-    public double bigramProbability(String w1, String w2) {
-        double w2UnigramProb = unigramProbability(w2);
-
-        double w1TotalCount = 1;
-        if (unigramCounts.containsKey(w1)) {
-            w1TotalCount += unigramCounts.get(w1);
-        }
-        int w2Count = 0;
-        if (bigramCounts.containsKey(w1) && bigramCounts.get(w1).containsKey(w2)) {
-            w2Count = bigramCounts.get(w1).get(w2);
-        }
-        double w2BigramProb = w2Count / w1TotalCount;
-
-        return LAMBDA * w2UnigramProb + (1 - LAMBDA) * w2BigramProb;
-    }
+    public abstract double bigramProbability(String w1, String w2);
 
     /**
      * P(w1, w2, ..., wn) = uP(w1)bP(w2|w1)bP(w3|w2)...bP(wn|wn-1)
@@ -109,7 +106,7 @@ public class LanguageModel implements Vocabulary, Serializable {
         String[] tokens = sentence.split("\\s+");
         double prob = Math.log(unigramProbability(tokens[0]));
         for (int i = 1; i < tokens.length; ++i)
-            prob += Math.log(bigramProbability(tokens[i-1], tokens[i]));
+            prob += Math.log(bigramProbability(tokens[i - 1], tokens[i]));
         return prob;
     }
 
@@ -144,10 +141,10 @@ public class LanguageModel implements Vocabulary, Serializable {
                     MapUtility.incrementCount(tokens[i], unigramCounts);
 
                     // increment bigram count
-                    Map<String, Integer> counts = bigramCounts.get(tokens[i-1]);
+                    Map<String, Integer> counts = bigramCounts.get(tokens[i - 1]);
                     if (counts == null) {
                         counts = new HashMap<String, Integer>();
-                        bigramCounts.put(tokens[i-1], counts);
+                        bigramCounts.put(tokens[i - 1], counts);
                     }
                     MapUtility.incrementCount(tokens[i], counts);
                 }
@@ -177,31 +174,24 @@ public class LanguageModel implements Vocabulary, Serializable {
 
     // Loads the object (and all associated data) from disk
     public static LanguageModel load() throws Exception {
+        LanguageModel lm_ = null;
+
         try {
-            if (lm_==null){
-                FileInputStream fiA = new FileInputStream(Config.languageModelFile);
-                ObjectInputStream oisA = new ObjectInputStream(fiA);
-                lm_ = (LanguageModel) oisA.readObject();
-            }
-        } catch (Exception e){
+            FileInputStream fiA = new FileInputStream(Config.languageModelFile);
+            ObjectInputStream oisA = new ObjectInputStream(fiA);
+            lm_ = (LanguageModel) oisA.readObject();
+        } catch (Exception e) {
             throw new Exception("Unable to load language model.  You may have not run build corrector");
         }
+
         return lm_;
     }
 
     // Saves the object (and all associated data) to disk
-    public void save() throws Exception{
+    public void save() throws Exception {
         FileOutputStream saveFile = new FileOutputStream(Config.languageModelFile);
         ObjectOutputStream save = new ObjectOutputStream(saveFile);
         save.writeObject(this);
         save.close();
-    }
-
-    // Creates a new lm object from a corpus
-    public static LanguageModel create(String corpusFilePath) throws Exception {
-        if(lm_ == null ){
-            lm_ = new LanguageModel(corpusFilePath);
-        }
-        return lm_;
     }
 }

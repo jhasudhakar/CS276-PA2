@@ -1,6 +1,8 @@
 package edu.stanford.cs276;
 
 
+import edu.stanford.cs276.lm.SmoothingType;
+
 public class BuildModels {
 
     public static double MU = .05;
@@ -29,7 +31,7 @@ public class BuildModels {
         }
         System.out.println("training corpus: " + args[0]);
 
-        languageModel =  LanguageModel.create(trainingCorpus);
+        languageModel =  LanguageModel.create(SmoothingType.LINEAR_INTERPOLATION, trainingCorpus);
         noisyChannelModel = NoisyChannelModel.create(editsFile);
 
         // Save the models to disk

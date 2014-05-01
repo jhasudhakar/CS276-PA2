@@ -1,5 +1,7 @@
 package edu.stanford.cs276;
 
+import edu.stanford.cs276.lm.SmoothingType;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -31,7 +33,7 @@ public class RunDevSet {
         NoisyChannelModel ncm= NoisyChannelModel.create(editsFile);
         System.out.println("-- Completed!");
         System.out.println("Building language model...");
-        LanguageModel languageModel=  LanguageModel.create(trainingCorpus);
+        LanguageModel languageModel = LanguageModel.create(SmoothingType.KNENSER_NEY_SMOOTHING, trainingCorpus);
         System.out.println("-- Completed!");
 
         long endTime   = System.currentTimeMillis();
