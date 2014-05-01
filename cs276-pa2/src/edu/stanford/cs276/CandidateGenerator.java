@@ -32,10 +32,10 @@ public class CandidateGenerator implements Serializable {
     // Generate all candidates for the target query
     public Set<String> getCandidates(String query, Vocabulary vocabulary) throws Exception {
         Set<String> results = new HashSet<String>();
-        Set<String> candidates = vocabulary.known(edits1_nospace(query));
+        Set<String> candidates = vocabulary.known(edits1(query));
         results.addAll(candidates);
         for (String s : candidates) {
-            results.addAll(vocabulary.known(edits1_nospace(s)));
+            results.addAll(vocabulary.known(edits1(s)));
         }
 
         // System.out.println("Number of candidates:" + results.size());
@@ -49,9 +49,6 @@ public class CandidateGenerator implements Serializable {
         }
         Set<String> candidates = vocabulary.known(edits1_nospace(query));
         results.addAll(candidates);
-        if (!candidates.isEmpty()) {
-            return results;
-        }
         for (String s : candidates) {
             results.addAll(vocabulary.known(edits1(s)));
         }
