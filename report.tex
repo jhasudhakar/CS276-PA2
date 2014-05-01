@@ -2,7 +2,7 @@
 
 \usepackage{enumerate}
 \usepackage{hyperref}
-\usepackage{geometry}
+\usepackage[bottom=1in,top=1in]{geometry}
 \usepackage{parskip}
 
 \geometry{letterpaper}
@@ -39,7 +39,7 @@ The system is modularized into three parts:
 
 \begin{enumerate}
     \item \textbf{Language Model}, used to compute the $P(Q)$ part of the noisy channel model.
-    \item \textbf{Noisy Channel Model}, used to compute the $P(R|Q)$ part.
+    \item \textbf{Channel Model}, used to compute the $P(R|Q)$ part.
     \item \textbf{Candidate Generator}, used to generate possible candidates of $Q$ given $R$.
 \end{enumerate}
 
@@ -61,9 +61,19 @@ A specific optimization we found worthwhile when building the language model is 
 
 On the other side, precomputing information of 1-dimension, higher-order data can greatly improve performance. For example, computing $N_{+}({\cdot}w_i)$ requires traversing all bigram counts. We can traverse the counts once and cache the result, or we can traverse the counts every time we need to compute $N_{+}({\cdot}w_i)$. Clearly, the former approach would be much faster as $|(w_{i-1},w_i): count(w_{i-1}w_i)>0|$ is large. This is an example of trading space for time.
 
-\section{Noisy Channel Model}
+\section{Channel Model}
 
-Edit\cite{jm-book}\cite{kernighan-1990}
+The uniform cost model is trivial and the choice of uniform cost value is discussed in the Parameter Tuning section.
+
+The empirical cost model (ECM) is more interesting. We referred to \cite{jm-book} and \cite{kernighan-1990} to get a good understanding of what's going on here.
+
+Like language model, the training process of ECM is actually just gathering the following counts: $del[w_{i-1},w_i]$, $ins[w_{i-1},x_i]$, $sub[x_i,w_i]$, $trans[w_{i-1},w_i]$, $count[w_i]$ and $count[w_{i-1},w_i]$. With these counts, we can easily compute different edit probability in $O(1)$ time\footnote{We use \texttt{HashMap} for fast lookup.}, according to the formulae from \cite{kernighan-1990}.
+
+As we are following \cite{kernighan-1990} and conditioning edits on the previous character, we introduce a meta charater \texttt{\$} as the ``beginning of word" character. Another caveat is that there's no guarantee that all character in the test queries appear in the corpus of ECM's training data. To address this problem, we add another meta character into ECM's alphabet\footnote{this character is chosen to be different from any characters in candidate generator's alphabet}. All character not in ECM's alphabet will be mapped to the unknown character. And since unknown character might never appear in the training data, we apply Laplace smoothing when computing the conditional probabilities.
+
+We appled two optimizations in the ECM. The first is using an $O(n)$ algorithm to determine edits in the training instances. A generic edit distance algorithm would be $O(mn)$, but since it's guaranteed that the each training instance has exactly one edit in it, we can use a linear complexity algorithm to determine the edit more efficiently.
+
+The second optimization is that we use Damerau-Levenshtein edit distance algorithm\footnote{To be precise, we use dynamic programming to determine minimal number of edits and record what kind of edit causes the minimal change as the algorithm runs. An $O(max(m,n))$ algorithm is used to determine the actual edits. See: \url{http://en.wikipedia.org/wiki/Damerau-Levenshtein\_distance}} for determining edits from $Q$ to $R$. You may think this step can totally be avoided if we record the edits while generating candidates. It's true. But as only candidates in the dictionary will be selected, the possibility that a candidate be actually computed with the noisy channel model is very low. If we doing so, much of the edits recorded in the candidate generating phase will be useless, which hurts performance. Moreover, recording edits may not be feasible for every candidate generation algorithm. Suppose we'd use a transducer to generate candidates, recording edits while generating might complicate the already complicated algorithm. In a word, for better modularity and maximal flexibility, we defer the edits determination process in ECM.
 
 \section{Candidate Genenration}
 
