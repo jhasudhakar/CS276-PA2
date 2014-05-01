@@ -11,7 +11,7 @@ public class RunCorrector {
     public static NoisyChannelModel nsm;
     public static CandidateGenerator cg;
 
-    private static double mu = 1.5;
+    private static double mu = 1;
 
 
     public static void main(String[] args) throws Exception {
@@ -63,7 +63,7 @@ public class RunCorrector {
         }
 
         if (uniformOrEmpirical.equals("empirical")) {
-            mu = 1.5;
+            mu = 1.0;
         } else {
             mu = 0.5;
         }
@@ -111,7 +111,7 @@ public class RunCorrector {
                     if (uniformOrEmpirical.equals("empirical")) {
                         prob = nsm.ecm_.editProbability(query, s, 1);
                     } else {
-                        prob = nsm.ecm_.editProbability(query, s, editDistance(query, s));
+                        prob = nsm.ecm_.editProbability(query, s, EditDistance.editDistance(query, s));
                     }
                     prob += languageModel.computeProbability(s) * mu;
 //                System.out.format("%s, %f\n", s, prob);
@@ -146,60 +146,6 @@ public class RunCorrector {
         System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 
-    private static int editDistance(String s, String t) {
-        final int N = s.length();
-        final int M = t.length();
-
-        // allocate and initialize DP and backtrace matrix
-        int[][] D = new int[N+1][];
-        for (int i = 0; i <= N; ++i) {
-            D[i] = new int[M+1];
-        }
-
-        for (int i = 0; i <= N; ++i) {
-            D[i][0] = i;
-        }
-
-        for (int i = 0; i <= M; ++i) {
-            D[0][i] = i;
-        }
-
-        // 1. run DP to determine minimal #edits
-        // store edits in B
-        for (int i = 1; i <= N; ++i) {
-            for (int j = 1; j <= M; ++j) {
-                // a. compute min(deletion, insertion, substitution) first
-                if (s.charAt(i-1) == t.charAt(j-1)) {
-                    D[i][j] = D[i-1][j-1];
-                } else {
-                    int deletionCost = D[i-1][j] + 1;
-                    int insertionCost = D[i][j-1] + 1;
-                    if (deletionCost <= insertionCost) {
-                        D[i][j] = deletionCost;
-                    } else {
-                        D[i][j] = insertionCost;
-                    }
-
-                    int substitutionCost = D[i-1][j-1] + 1;
-                    if (substitutionCost < D[i][j]) {
-                        D[i][j] = substitutionCost;
-                    }
-                }
-
-                // b. consider transposition if possible
-                if (i > 1 && j > 1
-                        && (s.charAt(i-1) == t.charAt(j-2))
-                        && (s.charAt(i-2) == t.charAt(j-1))) {
-                    int transpositionCost = D[i-2][j-2] + 1;
-                    if (transpositionCost < D[i][j]) {
-                        D[i][j] = transpositionCost;
-                    }
-                }
-            }
-        }
-        return D[N][M];
-    }
-
     private static String viterbi(String query) throws Exception {
         List<TreeSet<Node>> nodes = new ArrayList<TreeSet<Node>>();
         TreeSet<Node> start = new TreeSet<Node>();
@@ -213,7 +159,7 @@ public class RunCorrector {
             nodes.add(new TreeSet<Node>());
             /* Candidates have no space */
             for (String cand : candidates) {
-                double score_channel = nsm.ecm_.editProbability(token, cand, 1);
+                double score_channel = nsm.ecm_.editProbability(token, cand, EditDistance.editDistance(token, cand));
                 double score_language;
                 String best_path = "";
                 double best_so_far = Double.NEGATIVE_INFINITY;
@@ -234,7 +180,7 @@ public class RunCorrector {
             /* Consider splits: split "singledays" -> "single" "days" */
             candidates = cg.getCandidatesForSplits(token, languageModel);
             for (String cand : candidates) {
-                double score_channel = nsm.ecm_.editProbability(token, cand, 1);
+                double score_channel = nsm.ecm_.editProbability(token, cand, EditDistance.editDistance(token, cand));
                 double score_language;
                 String best_path = "";
                 double best_so_far = Double.NEGATIVE_INFINITY;
@@ -255,7 +201,31 @@ public class RunCorrector {
                 nodes.get(i + 1).add(new Node(bigram[1], best_so_far, best_path));
             }
 
-            while (nodes.get(i + 1).size() > 30) {
+            /* Consider combine: "some thing" -> "something" */
+            if (i >= 1) {
+                candidates = cg.getCandidatesForToken(tokens[i - 1] + tokens[i], languageModel);
+                for (String cand : candidates) {
+                    double score_channel = nsm.ecm_.editProbability(tokens[i - 1] + " " + tokens[i], cand, EditDistance.editDistance(tokens[i - 1] + " " + tokens[i], cand));
+                    double score_language;
+                    String best_path = "";
+                    double best_so_far = Double.NEGATIVE_INFINITY;
+                    for (Node prev : nodes.get(i - 1)) {
+                        if (i - 1 == 0) {
+                            score_language = Math.log(languageModel.unigramProbability(cand)) * mu;
+                        } else {
+                            score_language = Math.log(languageModel.bigramProbability(prev.token, cand)) * mu;
+                        }
+                        if (prev.score + score_language + score_channel > best_so_far) {
+                            best_so_far = prev.score + score_language + score_channel;
+                            best_path = prev.path + " " + cand;
+                        }
+                    }
+                    nodes.get(i + 1).add(new Node(cand, best_so_far, best_path));
+                }
+            }
+
+            /* Reduce the size of nodes */
+            while (nodes.get(i + 1).size() > 15) {
                 nodes.get(i + 1).remove(nodes.get(i + 1).last());
             }
         }
