@@ -4,6 +4,7 @@
 \usepackage{hyperref}
 \usepackage[bottom=1in,top=1in]{geometry}
 \usepackage{parskip}
+\usepackage{graphicx}
 
 \geometry{letterpaper}
 
@@ -77,17 +78,50 @@ The second optimization is that we use Damerau-Levenshtein edit distance algorit
 
 \section{Candidate Genenration}
 
-Viterbi...
+We made an assumption that each query is 2 edit distance away from the correct query and each word is at most 1 edit distance away. After making this assumption, we can generate candidates pretty efficiently. We first generate all edit distance 1 candidates (alphabet includes spaces so that we can split words in the query). Then we use a dictionary to filter the candidates we genereated. After that, we generate edit distance 1 candidates of remaining candidates. It is pretty efficient, we can finish our correction in 300 seconds.
 
 \section{Parameter Tuning}
 
 We tried to tune parameters to achieve the best performance. To avoid overfitting, before we conducted parameter tuning, we splitted the training data into a development set and a test set with a 7:3 ratio\footnote{See \texttt{split.py}}.
 
-Graphs...
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=8cm]{normal.pdf}
+  \caption{Tuning mu}
+  \label{fig:mu-normal}
+\end{figure}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=8cm]{extra.pdf}
+  \caption{Extra credit: tuning mu}
+  \label{fig:mu-extra}
+\end{figure}
+
+Figure.~(\ref{fig:mu-normal}) and Figure.~(\ref{fig:mu-extra}) shows our process of finding the best mu for our program. For basic credit, the best value of mu is 1.3 (empirical) 0.5 (uniform). For our extra credit program, empirical, 1.0 is the best value and for uniform model, 0.5 is the best value. (lambda is $0.05$ in our interpolation model, uniform edit cost is 0.03)
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=8cm]{uniform_edit_cost.pdf}
+  \caption{Tuning uniform edit cost}
+  \label{fig:uniform-edit-cost}
+\end{figure}
+
+As for uniform edit cost, we found that 0.03 is suitable for our program. Figure.~(\ref{fig:uniform-edit-cost}) confirms that.
 
 \section{Extra Credit}
 
-Yes, please!
+We tried different smoothing techniques and implemented viterbi algorithm for performance boost.
+
+\subsection{Viterbi algorithm}
+
+We implemented Viterbi algorithm to compute scores of each candidate. It is extremely fast. If a query has N words, and each word has M candidates, then our algorithm can compute scores for different combinations in $O(NM^2)$ time where k is the number of candidates we store for each word. We can improve the performance even further by limiting the candidates we store for each word.
+
+Since viterbi algorithm is extremely fast, now we can genereate a lot of candidates for each word! If we generate edit distance 1 away candidates, potentially, we can correct queries that have several edit distance 1 away errors. Now the computation bottleneck is in candidate generation now. If we have more time, we'd like to try k-gram to generate candidates much more efficiently.
+
+Some results after apply viterbi algorithm: If we only considers edit distance 1 candidates, we can correct 454 queries in 29s and achieve an accuracy of 88.79\%. If we considers edit distance 2 candidates, we can correct all queries in 666 seconds and achieve an accuracy of 91.86\%.
+
+Please refer to RunCorrect.java for more details of our Viterbi algorithm.
 
 \begin{thebibliography}{9}
 
