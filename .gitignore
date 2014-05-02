@@ -26,3 +26,6 @@ report.aux
 report.log
 report.out
 report.pdf
+/extra.pdf
+/normal.pdf
+/uniform_edit_cost.pdf
