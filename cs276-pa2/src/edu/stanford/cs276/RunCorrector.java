@@ -71,12 +71,12 @@ public class RunCorrector {
         }
 
         // Load models from disk
-        System.out.println("Loading language model...");
+//        System.out.println("Loading language model...");
         languageModel = LanguageModel.load();
-        System.out.println("-- Completed!");
-        System.out.println("Loading noisy channel model...");
+//        System.out.println("-- Completed!");
+//        System.out.println("Loading noisy channel model...");
         nsm = NoisyChannelModel.load();
-        System.out.println("-- Completed!");
+//        System.out.println("-- Completed!");
 
         BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
         nsm.setProbabilityType(uniformOrEmpirical);
@@ -130,22 +130,23 @@ public class RunCorrector {
             if (goldFileReader != null) {
                 String goldQuery = goldFileReader.readLine();
                 if (goldQuery.equals(correctedQuery)) {
-                    System.out.format("%d √: %s\n", totalCount, correctedQuery);
+//                    System.out.format("%d √: %s\n", totalCount, correctedQuery);
                     yourCorrectCount++;
                 } else {
-                    System.out.format("%d x: %s -> %s -> %s\n", totalCount, query, correctedQuery, goldQuery);
+//                    System.out.format("%d x: %s -> %s -> %s\n", totalCount, query, correctedQuery, goldQuery);
                 }
             } else {
-                System.out.format("%d: %s\n", totalCount, correctedQuery);
+//                System.out.format("%d: %s\n", totalCount, correctedQuery);
             }
+            System.out.println(correctedQuery);
             totalCount++;
         }
         queriesFileReader.close();
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println(yourCorrectCount);
-        System.out.println(1.0 * yourCorrectCount / totalCount);
-        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
+//        System.out.println(yourCorrectCount);
+//        System.out.println(1.0 * yourCorrectCount / totalCount);
+//        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 
     private static String viterbi(String query) throws Exception {
