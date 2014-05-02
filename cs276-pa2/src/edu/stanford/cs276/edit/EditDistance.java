@@ -262,8 +262,8 @@ public class EditDistance {
         }
 
         // should never reach here
-        System.err.println("Shouldn't reach here.");
-        System.out.println(clean + " " + noisy);
+        // System.err.println("Shouldn't reach here.");
+        // System.out.println(clean + " " + noisy);
         return null;
     }
 

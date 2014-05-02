@@ -33,7 +33,7 @@ public class AbsoluteDiscountLM extends LanguageModel {
         // use n1 and n2 to estimate discount D
         D = 1.0 * n1 / (n1 + 2 * n2);
 
-        System.out.println(String.format("n1 = %d, n2 = %d, D = %f", n1, n2, D));
+        // System.out.println(String.format("n1 = %d, n2 = %d, D = %f", n1, n2, D));
     }
 
     @Override

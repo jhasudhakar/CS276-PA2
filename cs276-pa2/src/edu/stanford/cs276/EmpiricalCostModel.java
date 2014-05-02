@@ -43,7 +43,7 @@ public class EmpiricalCostModel implements EditCostModel{
         transpositionCounts = new HashMap<Pair<Character, Character>, Integer>();
 
         BufferedReader input = new BufferedReader(new FileReader(editsFile));
-        System.out.println("Constructing edit distance map...");
+        // System.out.println("Constructing edit distance map...");
 
         String line = null;
         while ((line = input.readLine()) != null) {
@@ -74,7 +74,7 @@ public class EmpiricalCostModel implements EditCostModel{
         }
 
         input.close();
-        System.out.println("Done.");
+        // System.out.println("Done.");
     }
 
     private void updateCharacterCounts(final String word) {
@@ -128,7 +128,7 @@ public class EmpiricalCostModel implements EditCostModel{
         }
 
         if (i == unknownCharCandidates.length()) {
-            System.err.println("Warning: no proper unknown is found.");
+            // System.err.println("Warning: no proper unknown is found.");
         }
     }
 

@@ -115,7 +115,7 @@ public abstract class LanguageModel implements Vocabulary, Serializable {
         unigramCounts = new HashMap<String, Integer>();
         bigramCounts = new HashMap<String, Map<String, Integer>>();
 
-        System.out.println("Constructing dictionaries...");
+        // System.out.println("Constructing dictionaries...");
         File dir = new File(corpusFilePath);
         for (File file : dir.listFiles()) {
             // ignore hidden files
@@ -123,7 +123,7 @@ public abstract class LanguageModel implements Vocabulary, Serializable {
                 continue; // Ignore the self and parent aliases.
             }
 
-            System.out.printf("Reading data file %s ...\n", file.getName());
+            // System.out.printf("Reading data file %s ...\n", file.getName());
             BufferedReader input = new BufferedReader(new FileReader(file));
             String line = null;
             while ((line = input.readLine()) != null) {
@@ -159,7 +159,7 @@ public abstract class LanguageModel implements Vocabulary, Serializable {
         // Note: no need to pre-compute all unigram and bigram probabilities
         //       as we will only use a fraction of them
 
-        System.out.println("Done.");
+        // System.out.println("Done.");
     }
 
     private static int sum(Map<String, Integer> unigramCounts) {

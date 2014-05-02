@@ -65,7 +65,7 @@ public class RunCorrector {
         }
 
         if (uniformOrEmpirical.equals("empirical")) {
-            mu = 1.0;
+            mu = 1.25;
         } else {
             mu = 0.5;
         }
@@ -228,7 +228,7 @@ public class RunCorrector {
             }
 
             /* Reduce the size of nodes */
-            while (nodes.get(i + 1).size() > 15) {
+            while (nodes.get(i + 1).size() > 50) {
                 nodes.get(i + 1).remove(nodes.get(i + 1).last());
             }
         }

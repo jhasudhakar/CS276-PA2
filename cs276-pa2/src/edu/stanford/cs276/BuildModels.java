@@ -28,18 +28,22 @@ public class BuildModels {
                     );
             return;
         }
-        System.out.println("training corpus: " + args[0]);
+        // System.out.println("training corpus: " + args[0]);
 
-        languageModel =  LanguageModel.create(SmoothingType.LINEAR_INTERPOLATION, trainingCorpus);
+        if ("extra".equals(extra)) {
+            languageModel = LanguageModel.create(SmoothingType.KNENSER_NEY_SMOOTHING, trainingCorpus);
+        } else {
+            languageModel = LanguageModel.create(SmoothingType.LINEAR_INTERPOLATION, trainingCorpus);
+        }
         noisyChannelModel = NoisyChannelModel.create(editsFile);
 
         // Save the models to disk
-        System.out.println("Saving noisy channel model...");
+        // System.out.println("Saving noisy channel model...");
         noisyChannelModel.save();
-        System.out.println("-- Completed!");
-        System.out.println("Saving language model...");
+        // System.out.println("-- Completed!");
+        // System.out.println("Saving language model...");
         languageModel.save();
-        System.out.println("-- Completed!");
+        // System.out.println("-- Completed!");
 
         if ("extra".equals(extra)) {
             /*
@@ -52,6 +56,6 @@ public class BuildModels {
         }
         long endTime   = System.currentTimeMillis();
         long totalTime = endTime - startTime;
-        System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
+        // System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
     }
 }
