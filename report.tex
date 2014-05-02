@@ -5,6 +5,7 @@
 \usepackage[bottom=1in,top=1in]{geometry}
 \usepackage{parskip}
 \usepackage{graphicx}
+\usepackage{subcaption}
 
 \geometry{letterpaper}
 
@@ -36,16 +37,6 @@ An example of modularity is we want to use \texttt{LanguageModel} as source of v
 
 Examples of flexibility include that we want to implement various smoothing techniques on language model, so we make \texttt{LanguageModel} an abstract base class and let subclasses to implement \texttt{bigramProbability}. With this change, we are able to add different smoothing techniques with few code.
 
-The system is modularized into three parts:
-
-\begin{enumerate}
-    \item \textbf{Language Model}, used to compute the $P(Q)$ part of the noisy channel model.
-    \item \textbf{Channel Model}, used to compute the $P(R|Q)$ part.
-    \item \textbf{Candidate Generator}, used to generate possible candidates of $Q$ given $R$.
-\end{enumerate}
-
-Each part is documented in detail in the following sections, with design decisions addressing the above aspects.
-
 \section{Language Model}
 
 We referred to \cite{cs124-lm} and \cite{chen-goodman-99} for advanced smoothing techniques. There are 3 language models with different smoothing techniques in our implementation:
@@ -72,9 +63,9 @@ Like language model, the training process of ECM is actually just gathering the 
 
 As we are following \cite{kernighan-1990} and conditioning edits on the previous character, we introduce a meta charater \texttt{\$} as the ``beginning of sentence" character. Another caveat is that there's no guarantee that all character in the test queries appear in the corpus of ECM's training data. To address this problem, we add another meta character into ECM's alphabet\footnote{this character is chosen to be different from any characters in candidate generator's alphabet}. All character not in ECM's alphabet will be mapped to the unknown character. And since unknown character might never appear in the training data, we apply Laplace smoothing when computing the conditional probabilities.
 
-We appled two optimizations in the ECM. The first is using an $O(n)$ algorithm to determine edits in the training instances. A generic edit distance algorithm would be $O(mn)$, but since it's guaranteed that the each training instance has exactly one edit in it, we can use a linear complexity algorithm to determine the edit more efficiently.
+We appled two optimizations in the ECM. The first is using an $O(N)$ algorithm to determine edits in the training instances. A generic edit distance algorithm would be $O(MN)$, but since it's guaranteed that the each training instance has exactly one edit in it, we can use a linear complexity algorithm to determine the edit more efficiently.
 
-The second optimization is that we use Damerau-Levenshtein edit distance algorithm\footnote{To be precise, we use dynamic programming to determine minimal number of edits and record what kind of edit causes the minimal change as the algorithm runs. An $O(max(m,n))$ algorithm is used to determine the actual edits. See: \url{http://en.wikipedia.org/wiki/Damerau-Levenshtein\_distance}} for determining edits from $Q$ to $R$. You may think this step can totally be avoided if we record the edits while generating candidates. It's true. But as only candidates in the dictionary will be selected, the possibility that a candidate be actually computed with the noisy channel model is very low. If we doing so, much of the edits recorded in the candidate generating phase will be useless, which hurts performance. Moreover, recording edits may not be feasible for every candidate generation algorithm. Suppose we'd use a transducer to generate candidates, recording edits while generating might complicate the already complicated algorithm. In a word, for better modularity and maximal flexibility, we defer the edits determination process in ECM.
+The second optimization is that we use Damerau-Levenshtein edit distance algorithm\footnote{To be precise, we use dynamic programming to determine minimal number of edits and record what kind of edit causes the minimal change as the algorithm runs. An $O(max(M,N))$ algorithm is used to determine the actual edits. See: \url{http://en.wikipedia.org/wiki/Damerau-Levenshtein\_distance}} for determining edits from $Q$ to $R$. You may think this step can totally be avoided if we record the edits while generating candidates. It's true. But as only candidates in the dictionary will be selected, the possibility that a candidate be actually computed with the noisy channel model is very low. If we doing so, much of the edits recorded in the candidate generating phase will be useless, which hurts performance. Moreover, recording edits may not be feasible for every candidate generation algorithm. Suppose we'd use a transducer to generate candidates, recording edits while generating might complicate the already complicated algorithm. In a word, for better modularity and maximal flexibility, we defer the edits determination process in ECM.
 
 \section{Candidate Genenration}
 
@@ -86,19 +77,21 @@ We tried to tune parameters to achieve the best performance. To avoid overfittin
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=8cm]{normal.pdf}
-  \caption{Tuning mu}
-  \label{fig:mu-normal}
+  \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{normal.pdf}
+      \caption{Without extra part}
+      \label{fig:mu-normal}
+  \end{subfigure}%
+  \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{extra.pdf}
+      \caption{With extra part}
+      \label{fig:mu-extra}
+  \end{subfigure}
+  \caption{Tuning $\mu$}
+  \label{fig:mu}
 \end{figure}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=8cm]{extra.pdf}
-  \caption{Extra credit: tuning mu}
-  \label{fig:mu-extra}
-\end{figure}
-
-Figure.~(\ref{fig:mu-normal}) and Figure.~(\ref{fig:mu-extra}) shows our process of finding the best mu for our program. For basic credit, the best value of mu is 1.3 (empirical) 0.5 (uniform). For our extra credit program, empirical, 1.0 is the best value and for uniform model, 0.5 is the best value. (lambda is $0.05$ in our interpolation model, uniform edit cost is 0.03)
 
 \begin{figure}[!htb]
   \centering
@@ -107,21 +100,27 @@ Figure.~(\ref{fig:mu-normal}) and Figure.~(\ref{fig:mu-extra}) shows our process
   \label{fig:uniform-edit-cost}
 \end{figure}
 
+Figure.~(\ref{fig:mu-normal}) and Figure.~(\ref{fig:mu-extra}) shows our process of finding the best mu for our program. For basic credit, the best value of mu is 1.3 (empirical) 0.5 (uniform). For our extra credit program, empirical, 1.0 is the best value and for uniform model, 0.5 is the best value. (lambda is $0.05$ in our interpolation model, uniform edit cost is 0.03)
+
 As for uniform edit cost, we found that 0.03 is suitable for our program. Figure.~(\ref{fig:uniform-edit-cost}) confirms that.
 
 \section{Extra Credit}
 
-We tried different smoothing techniques and implemented viterbi algorithm for performance boost.
+We tried different smoothing techniques and implemented modified Viterbi algorithm for performance boost.
+
+\subsection{Advanced Smoothing}
+
+We implemented Absolute Discounting and Kneser-Ney Smoothing. When \texttt{extra} parameter is passed to the script, Kneser-Ney is used. For details of the smoothing, please refer to the Language Model section.
 
 \subsection{Viterbi algorithm}
 
-We implemented Viterbi algorithm to compute scores of each candidate. It is extremely fast. If a query has N words, and each word has M candidates, then our algorithm can compute scores for different combinations in $O(NM^2)$ time where k is the number of candidates we store for each word. We can improve the performance even further by limiting the candidates we store for each word.
+We implemented Viterbi algorithm\footnote{\url{http://en.wikipedia.org/wiki/Viterbi\_algorithm}} to compute scores of each candidate. It is extremely fast. If a query has N words, and each word has M candidates, then our algorithm can compute scores for different combinations in $O(NM^2)$ time where k is the number of candidates we store for each word. We can improve the performance even further by limiting the candidates we store for each word.
 
 Since viterbi algorithm is extremely fast, now we can genereate a lot of candidates for each word! If we generate edit distance 1 away candidates, potentially, we can correct queries that have several edit distance 1 away errors. Now the computation bottleneck is in candidate generation now. If we have more time, we'd like to try k-gram to generate candidates much more efficiently.
 
 Some results after apply viterbi algorithm: If we only considers edit distance 1 candidates, we can correct 454 queries in 29s and achieve an accuracy of 88.79\%. If we considers edit distance 2 candidates, we can correct all queries in 666 seconds and achieve an accuracy of 91.86\%.
 
-Please refer to RunCorrect.java for more details of our Viterbi algorithm.
+Please refer to \texttt{RunCorrect.java} for more details of our Viterbi algorithm.
 
 \begin{thebibliography}{9}
 
