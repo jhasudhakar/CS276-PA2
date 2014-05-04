@@ -116,9 +116,9 @@ We implemented Absolute Discounting and Kneser-Ney Smoothing. When \texttt{extra
 
 We implemented Viterbi algorithm\footnote{\url{http://en.wikipedia.org/wiki/Viterbi\_algorithm}} to compute scores of each candidate. It is extremely fast. If a query has N words, and each word has M candidates, then our algorithm can compute scores for different combinations in $O(NM^2)$ time where k is the number of candidates we store for each word. We can improve the performance even further by limiting the candidates we store for each word.
 
-Since viterbi algorithm is extremely fast, now we can genereate a lot of candidates for each word! If we generate edit distance 1 away candidates, potentially, we can correct queries that have several edit distance 1 away errors. Now the computation bottleneck is in candidate generation now. If we have more time, we'd like to try k-gram to generate candidates much more efficiently.
+Since Viterbi algorithm is extremely fast, now we can genereate a lot of candidates for each word! If we generate edit distance 1 away candidates, potentially, we can correct queries that have several edit distance 1 away errors. Now the computation bottleneck is in candidate generation. If we have more time, we'd like to try k-gram to generate candidates much more efficiently.
 
-Some results after apply viterbi algorithm: If we only considers edit distance 1 candidates, we can correct 454 queries in 29s and achieve an accuracy of 88.79\%. If we considers edit distance 2 candidates, we can correct all queries in 666 seconds and achieve an accuracy of 91.86\%.
+Some results after apply Viterbi algorithm: If we only consider edit distance 1 candidates, we can correct 454 queries in 29s and achieve an accuracy of 88.79\%. If we consider all edit distance 2 candidates, we can correct all queries in 666 seconds and achieve an accuracy of 91.86\%.
 
 Please refer to \texttt{RunCorrect.java} for more details of our Viterbi algorithm.
 
